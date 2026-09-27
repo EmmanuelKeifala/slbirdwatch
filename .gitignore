@@ -1,0 +1,11 @@
+node_modules/
+.DS_Store
+backend/.env
+
+# Firebase service-account keys (upload to EAS, never commit)
+*firebase-adminsdk*.json
+service-account*.json
+
+# Generated native projects (Expo prebuild / CNG)
+mobile/android/
+mobile/ios/
