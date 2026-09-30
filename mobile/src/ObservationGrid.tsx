@@ -31,7 +31,7 @@ export function ObservationGrid({
       setLoading(true);
       setPaging(offset > 0);
       setError(false);
-      load(offset)
+      return load(offset)
         .then((p) => {
           setItems((prev) => (offset === 0 ? p.items : [...prev, ...p.items]));
           setNext(p.next_offset);
@@ -54,6 +54,7 @@ export function ObservationGrid({
       keyOf={(o) => o.id}
       header={header}
       onEndReached={() => next !== null && !loading && fetchPage(next)}
+      onRefresh={() => fetchPage(0)}
       render={(o, tall) => {
         const sp = shownSpecies(o);
         return (

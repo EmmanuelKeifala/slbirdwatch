@@ -23,6 +23,7 @@ export function useSpecies(query: string, filters: BrowseFilters = {}) {
   const typed = useRef(false); // the first load runs at once; only typing is debounced
   const [next, setNext] = useState<number | null>(0);
   const [loading, setLoading] = useState(true);
+  const [paging, setPaging] = useState(false); // reloading page one under birds already shown stays quiet
   const [error, setError] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
   const [offline, setOffline] = useState(false);
@@ -31,6 +32,7 @@ export function useSpecies(query: string, filters: BrowseFilters = {}) {
     abort.current?.abort();
     const ctrl = (abort.current = new AbortController());
     setLoading(true);
+    setPaging(offset > 0);
     setError(null);
     try {
       const page = await listSpecies({ q, offset, ...filters }, ctrl.signal);
@@ -68,9 +70,10 @@ export function useSpecies(query: string, filters: BrowseFilters = {}) {
   return {
     items,
     offline,
-    loading,
+    loading: loading && (paging || items.length === 0),
     error,
     more: () => next !== null && !loading && !error && load(query.trim(), next),
     retry: () => load(query.trim(), items.length ? (next ?? 0) : 0),
+    refresh: () => load(query.trim(), 0),
   };
 }

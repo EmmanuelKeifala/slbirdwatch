@@ -136,6 +136,7 @@ export default function Sightings() {
         items={shownItems}
         keyOf={(o) => o.id}
         onEndReached={() => next !== null && !loading && load(next)}
+        onRefresh={() => load(0)}
         render={(o, tall) => (
           <DiscoveryCard
             tileId={shownSpecies(o)?.id ?? o.id}

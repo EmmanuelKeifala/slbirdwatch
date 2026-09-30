@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Animated, FlatList, StyleSheet, View, type ListRenderItem } from 'react-native';
+import { Animated, FlatList, RefreshControl, StyleSheet, View, type ListRenderItem } from 'react-native';
 
 // Animated.FlatList's types can't carry a generic item; it is the same component at runtime.
 const AnimatedList = Animated.FlatList as unknown as typeof FlatList;
@@ -21,6 +21,7 @@ export function StaggerGrid<T>({
   collapsible,
   footer,
   onEndReached,
+  onRefresh,
 }: {
   items: T[];
   keyOf: (item: T) => string | number;
@@ -29,6 +30,8 @@ export function StaggerGrid<T>({
   collapsible?: ReactNode;
   footer?: ReactNode;
   onEndReached?: () => void;
+  /** Pull to refresh; the spinner stays until the returned promise settles. */
+  onRefresh?: () => Promise<unknown>;
 }) {
   const c = useColors();
   const blocks = useMemo(() => {
@@ -37,6 +40,11 @@ export function StaggerGrid<T>({
     return out;
   }, [items]);
   const [height, setHeight] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = () => {
+    setRefreshing(true);
+    onRefresh?.().finally(() => setRefreshing(false));
+  };
   const [scrollY] = useState(() => new Animated.Value(0));
   // diffClamp follows the finger: down hides up to the header's height, up brings it back; bounce at the top
   // (negative offsets) is clamped away so the header never jumps.
@@ -86,6 +94,11 @@ export function StaggerGrid<T>({
         onScroll={onScroll}
         onEndReached={onEndReached}
         onEndReachedThreshold={1}
+        refreshControl={
+          onRefresh && (
+            <RefreshControl refreshing={refreshing} onRefresh={refresh} colors={[c.accent]} tintColor={c.accent} progressViewOffset={height} />
+          )
+        }
         initialNumToRender={3}
         maxToRenderPerBatch={3}
         windowSize={7}

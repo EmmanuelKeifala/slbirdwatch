@@ -24,7 +24,7 @@ export default function Explore() {
   const [filters, setFilters] = useState<BrowseFilters>({});
   const { session } = useAuth();
   const unread = useUnread(session?.token);
-  const { items, offline, loading, error, more, retry } = useSpecies(query, filters);
+  const { items, offline, loading, error, more, retry, refresh } = useSpecies(query, filters);
   const searching = !!query.trim() || Object.values(filters).some(Boolean);
 
   return (
@@ -107,6 +107,7 @@ export default function Explore() {
         items={items}
         keyOf={(b) => b.id}
         onEndReached={more}
+        onRefresh={refresh}
         render={(b, tall) => (
           <BirdCard
             id={b.id}
