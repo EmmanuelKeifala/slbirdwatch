@@ -8,12 +8,19 @@ import {
   useFonts,
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 
-import { AuthProvider } from '@/auth';
+import { AuthProvider, useAuth } from '@/auth';
 import { OnboardingProvider, useOnboarding } from '@/onboarding';
 import { OutboxSync } from '@/OutboxSync';
 import { PushSetup } from '@/push';
+import { useColors } from '@/theme';
+
+// The native splash stays up until fonts, the stored session and onboarding state are read: no blank frame.
+SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.setOptions({ fade: true, duration: 200 });
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -39,11 +46,17 @@ export default function RootLayout() {
 }
 
 function AppStack() {
+  const c = useColors();
   const { seen } = useOnboarding();
-  if (seen === null) return null;
+  const { ready } = useAuth();
+  const loaded = seen !== null && ready;
+  useEffect(() => {
+    if (loaded) SplashScreen.hideAsync().catch(() => {});
+  }, [loaded]);
+  if (!loaded) return null;
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
         <Stack.Protected guard={!seen}>
           <Stack.Screen name="welcome" />
         </Stack.Protected>
