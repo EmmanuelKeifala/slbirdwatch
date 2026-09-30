@@ -30,7 +30,7 @@ export default function TabsLayout() {
   return (
     // the + lives in this full-screen layer, not in the bar, so Android can hit it above the bar's edge
     <View style={{ flex: 1 }}>
-      <Tabs screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: c.bg } }} tabBar={(props) => <TabBar {...props} />}>
+      <Tabs screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: c.bg }, freezeOnBlur: true }} tabBar={(props) => <TabBar {...props} />}>
         <Tabs.Screen name="index" />
         <Tabs.Screen name="sightings" />
         <Tabs.Screen name="learn" />
