@@ -1,10 +1,10 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Animated, FlatList, RefreshControl, StyleSheet, View, type ListRenderItem } from 'react-native';
 
+import { space, useColors } from '@/theme';
+
 // Animated.FlatList's types can't carry a generic item; it is the same component at runtime.
 const AnimatedList = Animated.FlatList as unknown as typeof FlatList;
-
-import { space, useColors } from '@/theme';
 
 /**
  * Two-column staggered grid from design/refs/screen-discoveries.png; cards alternate tall/short.
