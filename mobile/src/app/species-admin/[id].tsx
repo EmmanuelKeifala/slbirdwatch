@@ -4,13 +4,13 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FormScroll } from '@/FormScroll';
+import { FormScroll } from '@/components/FormScroll';
 import { addLocalName, changeTaxonomy, deleteLocalName, getSpecies, setSensitive, type LocalName, type SpeciesDetail } from '@/api';
-import { useAuth } from '@/auth';
-import { LANGUAGES, languageLabel } from '@/languages';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
-import { SpeciesPicker, type Picked } from '@/SpeciesPicker';
+import { useAuth } from '@/state/auth';
+import { LANGUAGES, languageLabel } from '@/lib/languages';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { SpeciesPicker, type Picked } from '@/components/SpeciesPicker';
 import { font, radius, space, useColors, type Colors } from '@/theme';
 
 /** ADM-02 (admins): local names for a species, and merging or splitting it after a taxonomy update. */

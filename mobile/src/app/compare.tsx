@@ -6,13 +6,13 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, V
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FormScroll } from '@/FormScroll';
+import { FormScroll } from '@/components/FormScroll';
 import { compareSpecies, mediaUrl, type CompareItem, type SoundRecording } from '@/api';
-import { BirdArt } from '@/BirdArt';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
-import { seasonText } from '@/season';
-import { SpeciesPicker } from '@/SpeciesPicker';
+import { BirdArt } from '@/components/BirdArt';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { seasonText } from '@/lib/season';
+import { SpeciesPicker } from '@/components/SpeciesPicker';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 
 const VARIANT = { male: 'Male', female: 'Female', juvenile: 'Young', adult: 'Adult', '': '' } as const;

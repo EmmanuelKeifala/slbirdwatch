@@ -4,13 +4,13 @@ import type { ComponentProps } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useAuth } from '@/auth';
-import { Challenges } from '@/Challenges';
-import { EventBanner } from '@/EventBanner';
-import { Games } from '@/Games';
-import { signInFirst } from '@/nav';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
+import { useAuth } from '@/state/auth';
+import { Challenges } from '@/components/Challenges';
+import { EventBanner } from '@/components/EventBanner';
+import { Games } from '@/components/Games';
+import { signInFirst } from '@/lib/nav';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { font, radius, space, useColors } from '@/theme';
 
 type Icon = ComponentProps<typeof Feather>['name'];

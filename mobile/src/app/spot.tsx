@@ -6,10 +6,10 @@ import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { mediaUrl, spotGame, type SpotRound } from '@/api';
-import { close } from '@/nav';
-import { Pressable } from '@/Pressable';
+import { close } from '@/lib/nav';
+import { Pressable } from '@/components/Pressable';
 import { font, radius, space, useColors } from '@/theme';
-import { answerFeel } from '@/haptics';
+import { answerFeel } from '@/lib/haptics';
 
 /** QZ-07 "Spot the difference": two lookalikes side by side; tap the named one, then learn how to tell them apart. */
 export default function Spot() {

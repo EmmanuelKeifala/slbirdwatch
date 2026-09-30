@@ -6,12 +6,12 @@ import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, useWindowDim
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Mnemonic } from '@/Mnemonic';
+import { Mnemonic } from '@/components/Mnemonic';
 import { getLesson, mediaUrl, type LessonBird } from '@/api';
-import { BirdArt } from '@/BirdArt';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
-import { SoundPlayer } from '@/SoundPlayer';
+import { BirdArt } from '@/components/BirdArt';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { SoundPlayer } from '@/components/SoundPlayer';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 
 type Lesson = { slug: string; title: string; blurb: string; birds: LessonBird[] };

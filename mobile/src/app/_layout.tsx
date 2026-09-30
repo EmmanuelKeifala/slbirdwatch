@@ -12,10 +12,10 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 
-import { AuthProvider, useAuth } from '@/auth';
-import { OnboardingProvider, useOnboarding } from '@/onboarding';
-import { OutboxSync } from '@/OutboxSync';
-import { PushSetup } from '@/push';
+import { AuthProvider, useAuth } from '@/state/auth';
+import { OnboardingProvider, useOnboarding } from '@/state/onboarding';
+import { OutboxSync } from '@/state/OutboxSync';
+import { PushSetup } from '@/state/push';
 import { useColors } from '@/theme';
 
 // The native splash stays up until fonts, the stored session and onboarding state are read: no blank frame.

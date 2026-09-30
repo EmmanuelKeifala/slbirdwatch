@@ -5,20 +5,20 @@ import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 
-import { Pressable } from '@/Pressable';
+import { Pressable } from '@/components/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BirdArt } from '@/BirdArt';
+import { BirdArt } from '@/components/BirdArt';
 import { listLessons, mediaUrl, type LessonSummary } from '@/api';
-import { loadDeck } from '@/deck';
-import { lessonScores, PASS } from '@/lessonStore';
-import { dueCards } from '@/srs';
-import { lookups } from '@/lookups';
-import { useAuth } from '@/auth';
-import { useQuizStats } from '@/quizStore';
-import { QuizScopes } from '@/QuizScopes';
-import { ScreenHeader } from '@/ScreenHeader';
-import { accuracy } from '@/stats';
+import { loadDeck } from '@/state/deck';
+import { lessonScores, PASS } from '@/state/lessonStore';
+import { dueCards } from '@/lib/srs';
+import { lookups } from '@/state/lookups';
+import { useAuth } from '@/state/auth';
+import { useQuizStats } from '@/state/quizStore';
+import { QuizScopes } from '@/components/QuizScopes';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { accuracy } from '@/lib/stats';
 import { font, radius, space, useColors } from '@/theme';
 
 /** Learn: quizzes and your progress. Works without an account (QZ-13). */

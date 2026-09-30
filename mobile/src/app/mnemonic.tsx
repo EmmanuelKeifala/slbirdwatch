@@ -4,10 +4,10 @@ import { Alert, StyleSheet, Text, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { putMnemonic } from '@/api';
-import { useAuth } from '@/auth';
-import { FormScroll } from '@/FormScroll';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
+import { useAuth } from '@/state/auth';
+import { FormScroll } from '@/components/FormScroll';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { font, radius, space, useColors } from '@/theme';
 
 /** LRN-08 (verifiers): write the memory phrase for a bird's song or call. */

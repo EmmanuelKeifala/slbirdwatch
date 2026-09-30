@@ -5,10 +5,10 @@ import { ActivityIndicator, Alert, Share, StyleSheet, Text, TextInput, View } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { addGroupChallenge, deleteGroup, getGroup, leaveGroup, newGroupCode, type GroupDetail } from '@/api';
-import { useAuth } from '@/auth';
-import { FormScroll } from '@/FormScroll';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
+import { useAuth } from '@/state/auth';
+import { FormScroll } from '@/components/FormScroll';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { font, radius, space, useColors } from '@/theme';
 
 /** COM-03 / GAM-07: one group: its code, private board, challenges, outings, sightings and quiz. */

@@ -7,11 +7,11 @@ import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { leaderboard, mediaUrl, type BoardRow } from '@/api';
-import { useAuth } from '@/auth';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
+import { useAuth } from '@/state/auth';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { font, radius, space, useColors } from '@/theme';
-import { roughPosition } from '@/location';
+import { roughPosition } from '@/lib/location';
 
 const MEDAL = ['#F4B400', '#A7A9B8', '#C98A4B'];
 

@@ -4,12 +4,12 @@ import type { ComponentProps } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 
-import { Pressable } from '@/Pressable';
+import { Pressable } from '@/components/Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { mediaUrl } from '@/api';
-import { useAuth } from '@/auth';
-import { signInFirst } from '@/nav';
+import { useAuth } from '@/state/auth';
+import { signInFirst } from '@/lib/nav';
 import { font, radius, useColors } from '@/theme';
 
 type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];

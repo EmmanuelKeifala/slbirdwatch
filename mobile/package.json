@@ -49,7 +49,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "lint": "expo lint",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/exif.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/stats.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/trim.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/season.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/outboxRules.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/outingMath.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/srs.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/fuzzy.test.mts"
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/*.test.mts"
   },
   "private": true,
   "reanimated": {

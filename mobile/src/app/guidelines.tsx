@@ -1,7 +1,7 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Guidelines } from '@/Guidelines';
-import { ScreenHeader } from '@/ScreenHeader';
+import { Guidelines } from '@/components/Guidelines';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { useColors } from '@/theme';
 
 /** Community guidelines, readable any time from the profile. */

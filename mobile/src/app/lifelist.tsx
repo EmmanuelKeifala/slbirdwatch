@@ -6,10 +6,10 @@ import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { learnNext, lifeList, mediaUrl, type LifeBird, type NextBird } from '@/api';
-import { useAuth } from '@/auth';
-import { BirdCard } from '@/BirdTile';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
+import { useAuth } from '@/state/auth';
+import { BirdCard } from '@/components/BirdTile';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 
 /** LRN-05: the birds you've seen (verified sightings), those awaiting confirmation, and birds to learn next. */

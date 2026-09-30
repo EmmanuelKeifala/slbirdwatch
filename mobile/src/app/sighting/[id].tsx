@@ -4,10 +4,10 @@ import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 
-import { FollowButton } from '@/FollowButton';
-import { shareSighting } from '@/share';
-import { FormScroll } from '@/FormScroll';
-import { Pressable } from '@/Pressable';
+import { FollowButton } from '@/components/FollowButton';
+import { shareSighting } from '@/lib/share';
+import { FormScroll } from '@/components/FormScroll';
+import { Pressable } from '@/components/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -33,17 +33,17 @@ import {
   type UserReportReason,
   type Observation,
 } from '@/api';
-import { useAuth } from '@/auth';
-import { Comments } from '@/Comments';
-import { CommunityId } from '@/CommunityId';
-import { LICENCES } from '@/licences';
-import { SOUND_TAGS, TagEditor, tagText } from '@/PhotoTags';
-import { close, signInFirst } from '@/nav';
-import { HeroMedia } from '@/HeroMedia';
-import { ScreenHeader } from '@/ScreenHeader';
-import { SoundPlayer } from '@/SoundPlayer';
-import { StaticMap } from '@/StaticMap';
-import { StatusBadge } from '@/StatusBadge';
+import { useAuth } from '@/state/auth';
+import { Comments } from '@/components/Comments';
+import { CommunityId } from '@/components/CommunityId';
+import { LICENCES } from '@/lib/licences';
+import { SOUND_TAGS, TagEditor, tagText } from '@/components/PhotoTags';
+import { close, signInFirst } from '@/lib/nav';
+import { HeroMedia } from '@/components/HeroMedia';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { SoundPlayer } from '@/components/SoundPlayer';
+import { StaticMap } from '@/components/StaticMap';
+import { StatusBadge } from '@/components/StatusBadge';
 import { font, radius, space, useColors } from '@/theme';
 
 const CONFIDENCE = { certain: 'Certain', likely: 'Likely', guess: 'Best guess' } as const;

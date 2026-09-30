@@ -4,10 +4,10 @@ import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { putTip, similarSpecies, speciesTips, type IdTip } from '@/api';
-import { useAuth } from '@/auth';
-import { FormScroll } from '@/FormScroll';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
+import { useAuth } from '@/state/auth';
+import { FormScroll } from '@/components/FormScroll';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { font, radius, space, useColors } from '@/theme';
 
 /** LIB-10: write or edit an ID tip (verifiers). A full screen, so the text box always stays above the keyboard. */

@@ -5,11 +5,11 @@ import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { clearNotifications, deleteNotification, markNotificationsRead, myNotifications, type AppNotification } from '@/api';
-import { useAuth } from '@/auth';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
+import { useAuth } from '@/state/auth';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { font, radius, space, useColors } from '@/theme';
-import { setUnread } from '@/unread';
+import { setUnread } from '@/state/unread';
 
 function ago(iso: string) {
   const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);

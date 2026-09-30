@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { deletePack, downloadPack, packInfo, type PackInfo } from '@/offlinePack';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
+import { deletePack, downloadPack, packInfo, type PackInfo } from '@/state/offlinePack';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { font, radius, space, useColors } from '@/theme';
 
 const mb = (b: number) => `${Math.max(1, Math.round(b / 1e6))} MB`;

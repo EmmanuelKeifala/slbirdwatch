@@ -4,23 +4,23 @@ import { useEffect, useState, type ComponentProps } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 
-import { Pressable } from '@/Pressable';
+import { Pressable } from '@/components/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getQuiz, isVerifier, mediaUrl, setQuizSuitable, type QuizQuestion, type QuizScope } from '@/api';
-import { useAuth } from '@/auth';
-import { close } from '@/nav';
-import { addToDeck } from '@/deck';
-import { FormScroll } from '@/FormScroll';
-import { matchName } from '@/fuzzy';
-import { recordLesson } from '@/lessonStore';
-import { lookups } from '@/lookups';
-import { quizLevel, quizTyping, setQuizLevel, setQuizTyping, type QuizLevel } from '@/quizLevel';
-import { currentStats, saveQuiz } from '@/quizStore';
-import { SoundPlayer } from '@/SoundPlayer';
-import { accuracy, type QuizStats } from '@/stats';
+import { useAuth } from '@/state/auth';
+import { close } from '@/lib/nav';
+import { addToDeck } from '@/state/deck';
+import { FormScroll } from '@/components/FormScroll';
+import { matchName } from '@/lib/fuzzy';
+import { recordLesson } from '@/state/lessonStore';
+import { lookups } from '@/state/lookups';
+import { quizLevel, quizTyping, setQuizLevel, setQuizTyping, type QuizLevel } from '@/state/quizLevel';
+import { currentStats, saveQuiz } from '@/state/quizStore';
+import { SoundPlayer } from '@/components/SoundPlayer';
+import { accuracy, type QuizStats } from '@/lib/stats';
 import { font, radius, space, tileFor, useColors } from '@/theme';
-import { answerFeel } from '@/haptics';
+import { answerFeel } from '@/lib/haptics';
 
 // QZ-03
 const LEVELS: { level: QuizLevel; label: string; hint: string }[] = [

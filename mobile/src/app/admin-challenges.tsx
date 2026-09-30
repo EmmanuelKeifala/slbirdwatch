@@ -4,11 +4,11 @@ import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, View } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { adminChallenges, putChallenge, type AdminChallenge } from '@/api';
-import { useAuth } from '@/auth';
-import { FamilyChips } from '@/FamilyChips';
-import { FormScroll } from '@/FormScroll';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
+import { useAuth } from '@/state/auth';
+import { FamilyChips } from '@/components/FamilyChips';
+import { FormScroll } from '@/components/FormScroll';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { font, radius, space, useColors } from '@/theme';
 
 /** ADM-05 (admins): this week's and the next three weeks' challenges. Tap one to rewrite it. */

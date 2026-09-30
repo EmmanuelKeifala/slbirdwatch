@@ -5,9 +5,9 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { adminLessons, putLesson, type AdminLesson } from '@/api';
-import { useAuth } from '@/auth';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
+import { useAuth } from '@/state/auth';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { font, radius, space, useColors } from '@/theme';
 
 /** ADM-05 (admins): the lessons on Learn, in order. Tap one to edit; arrows move it. */

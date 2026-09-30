@@ -5,11 +5,11 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-nat
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getOuting, type OutingSummary } from '@/api';
-import { useAuth } from '@/auth';
-import { duration, km } from '@/outingMath';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
-import { StaticMap } from '@/StaticMap';
+import { useAuth } from '@/state/auth';
+import { duration, km } from '@/lib/outingMath';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { StaticMap } from '@/components/StaticMap';
 import { font, radius, space, useColors } from '@/theme';
 
 /** OBS-10: an outing's summary — time, distance, route, and what was seen. */

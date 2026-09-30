@@ -5,13 +5,13 @@ import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getQuiz, mediaUrl, type QuizQuestion } from '@/api';
-import { useAuth } from '@/auth';
-import { bestScores, recordScore } from '@/gameScores';
-import { close } from '@/nav';
-import { Pressable } from '@/Pressable';
-import { saveQuiz } from '@/quizStore';
+import { useAuth } from '@/state/auth';
+import { bestScores, recordScore } from '@/state/gameScores';
+import { close } from '@/lib/nav';
+import { Pressable } from '@/components/Pressable';
+import { saveQuiz } from '@/state/quizStore';
 import { font, radius, space, tileFor, useColors } from '@/theme';
-import { answerFeel } from '@/haptics';
+import { answerFeel } from '@/lib/haptics';
 
 // Zoom per stage: a close crop first, the whole photo last. Points for a right answer at each stage.
 const ZOOM = [3.2, 2.2, 1.5, 1];

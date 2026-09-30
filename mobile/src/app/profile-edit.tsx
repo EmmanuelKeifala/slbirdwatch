@@ -1,9 +1,9 @@
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FormScroll } from '@/FormScroll';
-import { ProfileEditor } from '@/ProfileEditor';
-import { ScreenHeader } from '@/ScreenHeader';
+import { FormScroll } from '@/components/FormScroll';
+import { ProfileEditor } from '@/components/ProfileEditor';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { space, useColors } from '@/theme';
 
 /** ACC-05 profile form, opened from the profile header's "Edit profile". */

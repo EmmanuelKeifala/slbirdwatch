@@ -5,12 +5,12 @@ import { ActivityIndicator, Alert, StyleSheet, Switch, Text, TextInput, View } f
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { adminLessons, deleteLesson, putLesson, speciesCards, type AdminLesson } from '@/api';
-import { useAuth } from '@/auth';
-import { FamilyChips } from '@/FamilyChips';
-import { FormScroll } from '@/FormScroll';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
-import { SpeciesPicker } from '@/SpeciesPicker';
+import { useAuth } from '@/state/auth';
+import { FamilyChips } from '@/components/FamilyChips';
+import { FormScroll } from '@/components/FormScroll';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { SpeciesPicker } from '@/components/SpeciesPicker';
 import { font, radius, space, useColors } from '@/theme';
 
 type Bird = { id: number; name: string };

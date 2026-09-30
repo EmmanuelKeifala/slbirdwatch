@@ -2,12 +2,12 @@ import { useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FormScroll } from '@/FormScroll';
-import { Bird3D } from '@/Bird3D';
-import { GROUPS, searchTerms, TERMS, type Part, type Term } from '@/glossary';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
-import { SearchField } from '@/SearchField';
+import { FormScroll } from '@/components/FormScroll';
+import { Bird3D } from '@/components/Bird3D';
+import { GROUPS, searchTerms, TERMS, type Part, type Term } from '@/lib/glossary';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { SearchField } from '@/components/SearchField';
 import { font, radius, space, useColors } from '@/theme';
 
 /** LRN-07: tap a part of the bird, or search the glossary of birding terms. */

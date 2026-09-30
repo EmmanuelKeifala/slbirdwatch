@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FormScroll } from '@/FormScroll';
+import { FormScroll } from '@/components/FormScroll';
 import { searchPeople, setRole, type Person, type Role } from '@/api';
-import { useAuth } from '@/auth';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
-import { SearchField } from '@/SearchField';
+import { useAuth } from '@/state/auth';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { SearchField } from '@/components/SearchField';
 import { font, radius, space, useColors } from '@/theme';
 
 const ROLES: { role: Role; label: string; hint: string }[] = [

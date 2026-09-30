@@ -6,13 +6,13 @@ import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { mediaUrl, speciesCards, type FlashcardData } from '@/api';
-import { BirdArt } from '@/BirdArt';
-import { gradeCard, loadDeck } from '@/deck';
-import { Mnemonic } from '@/Mnemonic';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
-import { SoundPlayer } from '@/SoundPlayer';
-import { dueCards, nextLabel, type Card, type Grade } from '@/srs';
+import { BirdArt } from '@/components/BirdArt';
+import { gradeCard, loadDeck } from '@/state/deck';
+import { Mnemonic } from '@/components/Mnemonic';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { SoundPlayer } from '@/components/SoundPlayer';
+import { dueCards, nextLabel, type Card, type Grade } from '@/lib/srs';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 
 const GRADES: { g: Grade; label: string; tone: 'wrong' | 'rare' | 'accent' | 'correct' }[] = [

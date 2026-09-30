@@ -5,12 +5,12 @@ import { ActivityIndicator, Animated, Easing, ScrollView, StyleSheet, Text, View
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { chorusQuiz, mediaUrl, type ChorusRound } from '@/api';
-import { useAuth } from '@/auth';
-import { close } from '@/nav';
-import { Pressable } from '@/Pressable';
-import { saveQuiz } from '@/quizStore';
+import { useAuth } from '@/state/auth';
+import { close } from '@/lib/nav';
+import { Pressable } from '@/components/Pressable';
+import { saveQuiz } from '@/state/quizStore';
 import { font, radius, space, useColors } from '@/theme';
-import { answerFeel } from '@/haptics';
+import { answerFeel } from '@/lib/haptics';
 
 /** QZ-10 dawn chorus: two or three songs at once; tick every bird you hear. */
 export default function Chorus() {

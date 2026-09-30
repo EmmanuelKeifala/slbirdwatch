@@ -6,14 +6,14 @@ import { ActivityIndicator, Alert, Linking, ScrollView, Share, StyleSheet, Switc
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FormScroll } from '@/FormScroll';
+import { FormScroll } from '@/components/FormScroll';
 import { deletePushToken, exportAccount, myDevices, type Device, type MyStats, type XP, exportLink, isAdmin, isModerator, isVerifier, mediaUrl, myStats, updateProfile, type ProfilePatch } from '@/api';
-import { useAuth } from '@/auth';
-import { getDeviceToken } from '@/pushToken';
-import { BirdArt } from '@/BirdArt';
-import { Pressable } from '@/Pressable';
-import { useQuizStats } from '@/quizStore';
-import { accuracy } from '@/stats';
+import { useAuth } from '@/state/auth';
+import { getDeviceToken } from '@/state/pushToken';
+import { BirdArt } from '@/components/BirdArt';
+import { Pressable } from '@/components/Pressable';
+import { useQuizStats } from '@/state/quizStore';
+import { accuracy } from '@/lib/stats';
 import { font, radius, space, useColors, type Colors } from '@/theme';
 
 type Icon = ComponentProps<typeof Feather>['name'];

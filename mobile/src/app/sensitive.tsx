@@ -4,12 +4,12 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FormScroll } from '@/FormScroll';
+import { FormScroll } from '@/components/FormScroll';
 import { listSensitive, type SensitiveSpecies } from '@/api';
-import { useAuth } from '@/auth';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
-import { SpeciesPicker } from '@/SpeciesPicker';
+import { useAuth } from '@/state/auth';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { SpeciesPicker } from '@/components/SpeciesPicker';
 import { font, radius, space, useColors } from '@/theme';
 
 /** ADM-03 (admins): sensitive species and how far their locations are blurred. Tap one to change it. */

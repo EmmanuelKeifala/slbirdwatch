@@ -1,13 +1,13 @@
 import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Pressable } from '@/Pressable';
+import { Pressable } from '@/components/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { feed, type Observation } from '@/api';
-import { useAuth } from '@/auth';
-import { ObservationGrid } from '@/ObservationGrid';
-import { ScreenHeader } from '@/ScreenHeader';
+import { useAuth } from '@/state/auth';
+import { ObservationGrid } from '@/components/ObservationGrid';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { font, radius, space, useColors } from '@/theme';
 
 const TABS: { status: Observation['status']; label: string }[] = [

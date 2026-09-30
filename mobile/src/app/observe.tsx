@@ -7,8 +7,8 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 
-import { FormScroll } from '@/FormScroll';
-import { Pressable } from '@/Pressable';
+import { FormScroll } from '@/components/FormScroll';
+import { Pressable } from '@/components/Pressable';
 
 import {
   addPhoto,
@@ -27,18 +27,18 @@ import {
   type Site,
   type Sound,
 } from '@/api';
-import { useAuth } from '@/auth';
-import { close } from '@/nav';
-import { enqueue, syncOutbox } from '@/outbox';
-import { activeOuting, noteSighting, useOutingState } from '@/outing';
-import { exifDate, exifLocation } from '@/exif';
-import { FeaturePicker } from '@/FeaturePicker';
-import { Guidelines } from '@/Guidelines';
-import { shrink } from '@/images';
-import { LICENCES, type Licence } from '@/licences';
-import { MapPicker } from '@/MapPicker';
-import { SoundRecorder, type PendingSound } from '@/SoundRecorder';
-import { SpeciesPicker, type Picked } from '@/SpeciesPicker';
+import { useAuth } from '@/state/auth';
+import { close } from '@/lib/nav';
+import { enqueue, syncOutbox } from '@/state/outbox';
+import { activeOuting, noteSighting, useOutingState } from '@/state/outing';
+import { exifDate, exifLocation } from '@/lib/exif';
+import { FeaturePicker } from '@/components/FeaturePicker';
+import { Guidelines } from '@/components/Guidelines';
+import { shrink } from '@/lib/images';
+import { LICENCES, type Licence } from '@/lib/licences';
+import { MapPicker } from '@/components/MapPicker';
+import { SoundRecorder, type PendingSound } from '@/components/SoundRecorder';
+import { SpeciesPicker, type Picked } from '@/components/SpeciesPicker';
 import { font, radius, space, useColors, type Colors } from '@/theme';
 
 type Fix = { lat: number; lng: number; accuracy: number | null; fromPhoto?: boolean; fromMap?: boolean };

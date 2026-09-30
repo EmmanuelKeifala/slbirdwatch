@@ -5,11 +5,11 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, Text, View } 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getRareAlerts, putRareAlerts, type RareAlerts } from '@/api';
-import { useAuth } from '@/auth';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
+import { useAuth } from '@/state/auth';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { font, radius, space, useColors } from '@/theme';
-import { roughPosition } from '@/location';
+import { roughPosition } from '@/lib/location';
 
 const RADII = [10, 25, 50];
 

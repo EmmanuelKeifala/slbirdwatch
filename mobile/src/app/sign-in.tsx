@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { FormScroll } from '@/FormScroll';
-import { Pressable } from '@/Pressable';
+import { FormScroll } from '@/components/FormScroll';
+import { Pressable } from '@/components/Pressable';
 
 import { useLocalSearchParams } from 'expo-router';
 
 import { AntDesign } from '@expo/vector-icons';
 
-import { useAuth } from '@/auth';
-import { googleAvailable, googleIdToken } from '@/googleAuth';
-import { afterSignIn, close } from '@/nav';
+import { useAuth } from '@/state/auth';
+import { googleAvailable, googleIdToken } from '@/state/googleAuth';
+import { afterSignIn, close } from '@/lib/nav';
 import { font, radius, space, useColors, type Colors } from '@/theme';
 
 export default function SignIn() {

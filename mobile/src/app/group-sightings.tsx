@@ -3,9 +3,9 @@ import { useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { groupSightings } from '@/api';
-import { useAuth } from '@/auth';
-import { ObservationGrid } from '@/ObservationGrid';
-import { ScreenHeader } from '@/ScreenHeader';
+import { useAuth } from '@/state/auth';
+import { ObservationGrid } from '@/components/ObservationGrid';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { useColors } from '@/theme';
 
 /** COM-03: a group's members' verified sightings, newest first. */

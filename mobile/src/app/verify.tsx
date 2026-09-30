@@ -4,9 +4,9 @@ import { StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { verifyQueue } from '@/api';
-import { useAuth } from '@/auth';
-import { ObservationGrid } from '@/ObservationGrid';
-import { ScreenHeader } from '@/ScreenHeader';
+import { useAuth } from '@/state/auth';
+import { ObservationGrid } from '@/components/ObservationGrid';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { font, space, useColors } from '@/theme';
 
 const VERIFIERS = ['verifier', 'moderator', 'admin'];

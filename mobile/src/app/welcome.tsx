@@ -2,11 +2,11 @@ import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Pressable } from '@/Pressable';
+import { Pressable } from '@/components/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FlyingBird } from '@/BirdArt';
-import { useOnboarding } from '@/onboarding';
+import { FlyingBird } from '@/components/BirdArt';
+import { useOnboarding } from '@/state/onboarding';
 import { font, radius, space, useColors } from '@/theme';
 
 // Star positions as fractions of the screen, so the sky looks the same on every phone.

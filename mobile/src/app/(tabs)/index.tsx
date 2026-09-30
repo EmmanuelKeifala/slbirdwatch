@@ -3,19 +3,19 @@ import { useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
-import { Pressable } from '@/Pressable';
+import { Pressable } from '@/components/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { mediaUrl, type BrowseFilters } from '@/api';
-import { BirdCard } from '@/BirdTile';
-import { BrowseFilterBar } from '@/BrowseFilters';
-import { ScreenHeader } from '@/ScreenHeader';
-import { SearchField } from '@/SearchField';
-import { StaggerGrid } from '@/StaggerGrid';
+import { BirdCard } from '@/components/BirdTile';
+import { BrowseFilterBar } from '@/components/BrowseFilters';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { SearchField } from '@/components/SearchField';
+import { StaggerGrid } from '@/components/StaggerGrid';
 import { font, radius, space, useColors } from '@/theme';
-import { useSpecies } from '@/useSpecies';
-import { useAuth } from '@/auth';
-import { useUnread } from '@/unread';
+import { useSpecies } from '@/state/useSpecies';
+import { useAuth } from '@/state/auth';
+import { useUnread } from '@/state/unread';
 
 /** Home: browse and search the bird library, no account needed (ACC-01). */
 export default function Explore() {

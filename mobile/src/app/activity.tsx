@@ -5,12 +5,12 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { activityFeed, myFollowing } from '@/api';
-import { useAuth } from '@/auth';
-import { signInFirst } from '@/nav';
-import { roughPosition } from '@/location';
-import { ObservationGrid } from '@/ObservationGrid';
-import { Pressable } from '@/Pressable';
-import { ScreenHeader } from '@/ScreenHeader';
+import { useAuth } from '@/state/auth';
+import { signInFirst } from '@/lib/nav';
+import { roughPosition } from '@/lib/location';
+import { ObservationGrid } from '@/components/ObservationGrid';
+import { Pressable } from '@/components/Pressable';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { font, radius, space, useColors } from '@/theme';
 
 const FREETOWN = { lat: 8.484, lng: -13.234 };

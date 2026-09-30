@@ -6,13 +6,13 @@ import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createDuel, getDuel, mediaUrl, myDuels, scoreDuel, type Duel } from '@/api';
-import { useAuth } from '@/auth';
-import { FormScroll } from '@/FormScroll';
-import { close, signInFirst } from '@/nav';
-import { Pressable } from '@/Pressable';
-import { SoundPlayer } from '@/SoundPlayer';
+import { useAuth } from '@/state/auth';
+import { FormScroll } from '@/components/FormScroll';
+import { close, signInFirst } from '@/lib/nav';
+import { Pressable } from '@/components/Pressable';
+import { SoundPlayer } from '@/components/SoundPlayer';
 import { font, radius, space, tileFor, useColors } from '@/theme';
-import { answerFeel } from '@/haptics';
+import { answerFeel } from '@/lib/haptics';
 
 /** QZ-11 head-to-head: make a challenge or enter a friend's code, play the same 10 questions, compare. */
 export default function DuelScreen() {

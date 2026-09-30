@@ -3,17 +3,17 @@ import { Link, router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Pressable } from '@/Pressable';
+import { Pressable } from '@/components/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { mediaUrl, myObservations, shownSpecies, type Observation } from '@/api';
-import { useAuth } from '@/auth';
-import { BirdArt } from '@/BirdArt';
-import { DiscoveryCard } from '@/DiscoveryCard';
-import { OutboxList } from '@/OutboxList';
-import { OutingBar } from '@/OutingBar';
-import { useOutbox } from '@/outbox';
-import { StaggerGrid } from '@/StaggerGrid';
+import { useAuth } from '@/state/auth';
+import { BirdArt } from '@/components/BirdArt';
+import { DiscoveryCard } from '@/components/DiscoveryCard';
+import { OutboxList } from '@/components/OutboxList';
+import { OutingBar } from '@/components/OutingBar';
+import { useOutbox } from '@/state/outbox';
+import { StaggerGrid } from '@/components/StaggerGrid';
 import { font, radius, space, useColors } from '@/theme';
 
 /** "Your discoveries" — design/refs/screen-discoveries.png. */

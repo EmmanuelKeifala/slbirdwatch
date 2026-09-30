@@ -5,11 +5,11 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { familiesOf } from '@/api';
-import { useAuth } from '@/auth';
-import { Pressable } from '@/Pressable';
-import { useQuizStats } from '@/quizStore';
-import { ScreenHeader } from '@/ScreenHeader';
-import { accuracy, mastered } from '@/stats';
+import { useAuth } from '@/state/auth';
+import { Pressable } from '@/components/Pressable';
+import { useQuizStats } from '@/state/quizStore';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { accuracy, mastered } from '@/lib/stats';
 import { font, radius, space, useColors } from '@/theme';
 
 const pct = ([r, w]: [number, number]) => (r + w ? Math.round((100 * r) / (r + w)) : 0);

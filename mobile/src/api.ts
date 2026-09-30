@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 
-import type { Licence } from '@/licences';
-import type { QuizStats } from '@/stats';
+import type { Licence } from '@/lib/licences';
+import type { QuizStats } from '@/lib/stats';
 
 // EXPO_PUBLIC_API_URL wins; in dev, fall back to the machine running Metro, port 8080.
 const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
