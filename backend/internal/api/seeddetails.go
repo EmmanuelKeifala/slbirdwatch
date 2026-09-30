@@ -46,7 +46,7 @@ func parseArticle(extract string) (sections, highlights []textSection, length st
 			sections = append(sections, cur)
 		}
 	}
-	for _, line := range strings.Split(extract, "\n") {
+	for line := range strings.SplitSeq(extract, "\n") {
 		if m := wikiHeading.FindStringSubmatch(strings.TrimSpace(line)); m != nil {
 			level := len(m[1])
 			if skipLevel > 0 && level > skipLevel {

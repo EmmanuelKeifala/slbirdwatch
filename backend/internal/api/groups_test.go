@@ -30,7 +30,7 @@ func TestGroups(t *testing.T) {
 		t.Fatalf("create: %d %v", code, g)
 	}
 	gid := strconv.Itoa(int(g["id"].(float64)))
-	defer db.Exec(context.Background(), `DELETE FROM groups WHERE id = $1`, gid)
+	defer db.Exec(t.Context(), `DELETE FROM groups WHERE id = $1`, gid)
 
 	if code, _ := call("GET", "/groups/"+gid, cy, ""); code != 404 {
 		t.Errorf("outsider sees the group: %d", code)

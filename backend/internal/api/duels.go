@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // QZ-11 head-to-head: one person makes a challenge (a fixed set of 10 questions under a 6-character code), plays
@@ -68,14 +67,13 @@ func (a *Server) createDuel(w http.ResponseWriter, r *http.Request) {
 	}
 	raw, _ := json.Marshal(questions)
 	var code string
-	for try := 0; try < 6; try++ {
+	for try := range 6 {
 		code = newJoinCode()
 		_, err := a.db.Exec(r.Context(), `INSERT INTO duels (code, creator_id, kind, questions) VALUES ($1, $2, $3, $4)`, code, userID(r), body.Kind, raw)
-		var pgErr *pgconn.PgError
 		if err == nil {
 			break
 		}
-		if !errors.As(err, &pgErr) || pgErr.Code != "23505" || try == 5 {
+		if pgCode(err) != uniqueViolation || try == 5 {
 			internalError(w, "create duel", err)
 			return
 		}
@@ -101,10 +99,7 @@ func (a *Server) getDuel(w http.ResponseWriter, r *http.Request) {
 		internalError(w, "duel", err)
 		return
 	}
-	if avatar != nil {
-		u := a.media.URL(*avatar)
-		d.Creator.AvatarURL = &u
-	}
+	d.Creator.AvatarURL = a.mediaURL(avatar)
 	json.Unmarshal(raw, &d.Questions)
 	rows, err := a.db.Query(r.Context(), `SELECT u.id, u.display_name, u.avatar_key, s.right_count, s.answered, s.time_ms
 		FROM duel_scores s JOIN users u ON u.id = s.user_id WHERE s.duel_id = $1 ORDER BY s.right_count DESC, s.time_ms`, id)
@@ -117,10 +112,7 @@ func (a *Server) getDuel(w http.ResponseWriter, r *http.Request) {
 		var av *string
 		var ms int
 		err := row.Scan(&s.User.ID, &s.User.DisplayName, &av, &s.Right, &s.Of, &ms)
-		if av != nil {
-			u := a.media.URL(*av)
-			s.User.AvatarURL = &u
-		}
+		s.User.AvatarURL = a.mediaURL(av)
 		s.TimeS, s.Me = float64(ms)/1000, s.User.ID == userID(r)
 		d.Played = d.Played || s.Me
 		return s, err

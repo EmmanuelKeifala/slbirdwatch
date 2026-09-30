@@ -129,14 +129,6 @@ func (a *Server) modQueue(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"sightings": sightings, "people": people, "comments": comments})
 }
 
-func (a *Server) mediaURL(key *string) *string {
-	if key == nil {
-		return nil
-	}
-	u := a.media.URL(*key)
-	return &u
-}
-
 func orEmpty(s []string) []string {
 	if s == nil {
 		return []string{}

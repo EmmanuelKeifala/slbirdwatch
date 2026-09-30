@@ -2,9 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // HTTP plumbing shared by the handlers.
@@ -72,4 +75,19 @@ func page[T any](items []T, limit, offset int) map[string]any {
 		return map[string]any{"items": items[:limit], "next_offset": offset + limit}
 	}
 	return map[string]any{"items": items, "next_offset": nil}
+}
+
+// Postgres error codes the handlers turn into client errors.
+const (
+	uniqueViolation     = "23505"
+	foreignKeyViolation = "23503"
+	checkViolation      = "23514"
+)
+
+// pgCode is err's Postgres error code, or "" when it isn't a Postgres error.
+func pgCode(err error) string {
+	if e, ok := errors.AsType[*pgconn.PgError](err); ok {
+		return e.Code
+	}
+	return ""
 }

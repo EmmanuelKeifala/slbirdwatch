@@ -256,10 +256,7 @@ func (a *Server) listIdentifications(w http.ResponseWriter, r *http.Request) {
 		var avatar *string
 		err := row.Scan(&i.ID, &i.User.ID, &i.User.DisplayName, &avatar, &i.Verifier,
 			&i.Species.ID, &i.Species.EnglishName, &i.Species.ScientificName, &i.Reason, &i.CreatedAt)
-		if avatar != nil {
-			u := a.media.URL(*avatar)
-			i.User.AvatarURL = &u
-		}
+		i.User.AvatarURL = a.mediaURL(avatar)
 		return i, err
 	})
 	if err != nil {
@@ -328,8 +325,7 @@ func (a *Server) flagObservation(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err := a.db.Exec(r.Context(), `INSERT INTO flags (observation_id, user_id, reason, note) VALUES ($1, $2, $3, $4)`,
 		oid, userID(r), body.Reason, body.Note)
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+	if pgCode(err) == uniqueViolation {
 		writeError(w, http.StatusConflict, "you've already reported this")
 		return
 	}

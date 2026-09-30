@@ -21,7 +21,7 @@ func TestLikes(t *testing.T) {
 	if code, _ := call("PUT", "/observations/"+oid+"/like", "", ""); code != 401 {
 		t.Errorf("guest like: %d", code)
 	}
-	for i := 0; i < 2; i++ { // liking twice is still one like
+	for range 2 { // liking twice is still one like
 		if code, v := call("PUT", "/observations/"+oid+"/like", bo, ""); code != 200 || v["likes"].(float64) != 1 {
 			t.Fatalf("like: %d %v", code, v)
 		}

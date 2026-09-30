@@ -18,7 +18,7 @@ func TestDwCA(t *testing.T) {
 	h := testRouter(t)
 	db := testDB(t)
 	cache, _ := database.OpenRedis()
-	cache.Del(context.Background(), "gbif:dwca")
+	cache.Del(t.Context(), "gbif:dwca")
 	t.Cleanup(func() { cache.Del(context.Background(), "gbif:dwca") })
 	call("POST", "/auth/signup", "", creds(email, "correct horse", "Ada"))
 	call("POST", "/auth/signup", "", creds("r-"+email, "correct horse", "Rae"))

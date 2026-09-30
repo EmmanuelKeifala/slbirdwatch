@@ -62,10 +62,7 @@ func (a *Server) leaderboard(w http.ResponseWriter, r *http.Request) {
 		var b boardRow
 		var avatar *string
 		err := row.Scan(&b.Rank, &b.User.ID, &b.User.DisplayName, &avatar, &b.XP)
-		if avatar != nil {
-			u := a.media.URL(*avatar)
-			b.User.AvatarURL = &u
-		}
+		b.User.AvatarURL = a.mediaURL(avatar)
 		b.Me = b.User.ID == viewerID(r)
 		return b, err
 	})

@@ -137,8 +137,7 @@ func (a *Server) loadAnalytics(ctx context.Context, now time.Time) (analytics, e
 		return an, err
 	}
 	if imp != nil {
-		v := int(*imp)
-		an.Learning.ImprovementPts = &v
+		an.Learning.ImprovementPts = new(int(*imp))
 	}
 
 	var d7, d7of, d30, d30of int
@@ -158,12 +157,10 @@ func (a *Server) loadAnalytics(ctx context.Context, now time.Time) (analytics, e
 	}
 	E.DAUMAUPct = pct(E.DAU, E.MAU)
 	if d7of > 0 {
-		v := pct(d7, d7of)
-		E.D7Pct = &v
+		E.D7Pct = new(pct(d7, d7of))
 	}
 	if d30of > 0 {
-		v := pct(d30, d30of)
-		E.D30Pct = &v
+		E.D30Pct = new(pct(d30, d30of))
 	}
 	// last week's challenges: of the people active that week, who made progress, and how many were finished
 	// ponytail: measures each active person against each challenge (3 × people); fine for a pilot.

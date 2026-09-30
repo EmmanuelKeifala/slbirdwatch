@@ -6,14 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"maps"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/slbirdwatch/backend/internal/storage"
+	"golang.org/x/sync/errgroup"
 )
 
 // LIB-08: go run ./cmd/birdwatch seed-gallery [limit] — up to 8 photos per Sierra Leone species from research-grade
@@ -132,9 +133,7 @@ func variantOf(o inatObservation) string {
 func (ic *inatClient) photos(ctx context.Context, taxon int64, extra url.Values, n int) ([]inatPhoto, error) {
 	q := url.Values{"taxon_id": {strconv.FormatInt(taxon, 10)}, "quality_grade": {"research"}, "photos": {"true"},
 		"photo_license": {"cc0,cc-by,cc-by-sa,cc-by-nc,cc-by-nc-sa"}, "order_by": {"votes"}, "per_page": {strconv.Itoa(n)}}
-	for k, v := range extra {
-		q[k] = v
-	}
+	maps.Copy(q, extra)
 	var r struct {
 		Results []inatObservation `json:"results"`
 	}
@@ -257,17 +256,12 @@ func (a *Server) seedGallery(ctx context.Context, ic *inatClient, wc *wikiClient
 			}
 			picked := pickGallery(lists[0], lists[1], lists[2], lists[3])
 			errs := make([]error, len(picked))
-			var wg sync.WaitGroup
-			sem := make(chan struct{}, 4) // downloads come from iNaturalist's open-data bucket, not the API
+			var g errgroup.Group
+			g.SetLimit(4) // downloads come from iNaturalist's open-data bucket, not the API
 			for i, p := range picked {
-				wg.Add(1)
-				sem <- struct{}{}
-				go func() {
-					defer func() { <-sem; wg.Done() }()
-					errs[i] = a.storeGalleryPhoto(ctx, wc, t.id, p)
-				}()
+				g.Go(func() error { errs[i] = a.storeGalleryPhoto(ctx, wc, t.id, p); return nil })
 			}
-			wg.Wait()
+			g.Wait()
 			failed := false
 			for i, err := range errs {
 				if err != nil { // one slow or broken image shouldn't stop the run; the species is retried next run

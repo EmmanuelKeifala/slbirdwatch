@@ -409,8 +409,7 @@ func (a *Server) loadSpeciesDetail(ctx context.Context, id int64) (*speciesDetai
 		var merged bool
 		_, err := pgx.ForEachRow(rows, []any{&r.ID, &r.EnglishName, &r.ScientificName, &merged}, func() error {
 			if merged {
-				m := r
-				sp.MergedInto = &m
+				sp.MergedInto = new(r)
 			} else {
 				sp.SplitInto = append(sp.SplitInto, r)
 			}
@@ -440,8 +439,7 @@ func intPtr(v *int16) *int {
 	if v == nil {
 		return nil
 	}
-	n := int(*v)
-	return &n
+	return new(int(*v))
 }
 
 type communityPhoto struct {

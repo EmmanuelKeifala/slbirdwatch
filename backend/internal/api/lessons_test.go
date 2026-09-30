@@ -2,6 +2,7 @@ package api
 
 import (
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -30,12 +31,12 @@ func TestLessons(t *testing.T) {
 	}
 	// The lesson's quiz asks only about its birds.
 	allowed := map[string]bool{}
-	q := ""
+	var q strings.Builder
 	for _, id := range ids {
 		allowed[id] = true
-		q += id + ","
+		q.WriteString(id + ",")
 	}
-	_, quiz := call("GET", "/quiz/picture?n=20&species="+q, "", "")
+	_, quiz := call("GET", "/quiz/picture?n=20&species="+q.String(), "", "")
 	for _, qq := range quiz["questions"].([]any) {
 		id := strconv.Itoa(int(qq.(map[string]any)["answer"].(map[string]any)["id"].(float64)))
 		if !allowed[id] {

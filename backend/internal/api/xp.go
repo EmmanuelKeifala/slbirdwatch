@@ -74,8 +74,7 @@ func loadXP(ctx context.Context, q querier, userID int64) (xpSummary, error) {
 		if s.XP >= l.At {
 			s.Level, s.LevelName, s.LevelAt, s.NextAt = i+1, l.Name, l.At, nil
 			if i+1 < len(xpLevels) {
-				next := xpLevels[i+1].At
-				s.NextAt = &next
+				s.NextAt = new(xpLevels[i+1].At)
 			}
 		}
 	}

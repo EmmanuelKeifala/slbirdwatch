@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type site struct {
@@ -86,8 +85,7 @@ func (a *Server) createSite(w http.ResponseWriter, r *http.Request) {
 		INSERT INTO sites (name, location, created_by) VALUES ($1, ST_SetSRID(ST_MakePoint($3, $2), 4326)::geography, $4)
 		RETURNING id, name, ST_Y(location::geometry), ST_X(location::geometry)`,
 		body.Name, *body.Lat, *body.Lng, userID(r)).Scan(&s.ID, &s.Name, &s.Lat, &s.Lng)
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23514" {
+	if pgCode(err) == checkViolation {
 		writeError(w, http.StatusBadRequest, "site name must be 2 to 80 characters")
 		return
 	}

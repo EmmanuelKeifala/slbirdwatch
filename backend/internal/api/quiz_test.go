@@ -147,7 +147,7 @@ func TestQuizLevels(t *testing.T) {
 		db.Exec(context.Background(), `UPDATE species_images SET quiz_suitable = true WHERE species_id = $1`, sp)
 	})
 
-	for i := 0; i < 5; i++ { // the pick is random among allowed photos, so look a few times
+	for range 5 { // the pick is random among allowed photos, so look a few times
 		only := fmt.Sprintf("species=%d&n=1&level=", sp)
 		if q := get(only + "beginner"); len(q) != 1 || q[0].MediaRef != fmt.Sprintf("gallery:%d", plain) {
 			t.Fatalf("beginner: %+v", q)
@@ -283,7 +283,7 @@ func TestQuizAdapts(t *testing.T) {
 		q := v["questions"].([]any)[0].(map[string]any)
 		return int64(q["answer"].(map[string]any)["id"].(float64)), q["reason"].(string)
 	}
-	for i := 0; i < 5; i++ { // the order has a random part; these should win every time
+	for range 5 { // the order has a random part; these should win every time
 		if id, why := first(other, weak); id != weak || why != "weak" {
 			t.Fatalf("weak bird should come first: got %d (%s)", id, why)
 		}

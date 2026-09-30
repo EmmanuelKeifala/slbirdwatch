@@ -103,7 +103,7 @@ func TestObservationPhotos(t *testing.T) {
 	}
 
 	// Cap at 10 photos (3 uploaded so far).
-	for i := 0; i < 7; i++ {
+	for i := range 7 {
 		if code, _ := upload(token, "/observations/"+oid+"/photos", small()); code != http.StatusCreated {
 			t.Fatalf("photo %d: %d", i+2, code)
 		}

@@ -97,7 +97,7 @@ func (a *Server) occurrences(r *http.Request, openOnly bool, emit func([]string)
 			country = "SL"
 		}
 		var media []string
-		for _, k := range strings.Fields(keys) {
+		for k := range strings.FieldsSeq(keys) {
 			media = append(media, absolute(r, a.media.URL(k)))
 		}
 		lic := licenceURLs[licence]

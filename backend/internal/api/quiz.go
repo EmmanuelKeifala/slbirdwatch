@@ -410,7 +410,7 @@ func (a *Server) setQuizSuitable(w http.ResponseWriter, r *http.Request) {
 // quizFocus parses the app's "focus" list (species the person looked up or got wrong): up to 100 ids.
 func quizFocus(v string) []int64 {
 	out := []int64{}
-	for _, f := range strings.Split(v, ",") {
+	for f := range strings.SplitSeq(v, ",") {
 		if id, err := strconv.ParseInt(strings.TrimSpace(f), 10, 64); err == nil && len(out) < 100 {
 			out = append(out, id)
 		}

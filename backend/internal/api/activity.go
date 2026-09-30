@@ -65,10 +65,7 @@ func (a *Server) myFollowing(w http.ResponseWriter, r *http.Request) {
 		var f followed
 		var key *string
 		err := row.Scan(&f.ID, &f.DisplayName, &key)
-		if key != nil {
-			u := a.media.URL(*key)
-			f.AvatarURL = &u
-		}
+		f.AvatarURL = a.mediaURL(key)
 		return f, err
 	})
 	if err != nil {

@@ -19,6 +19,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/slbirdwatch/backend/internal/config"
 	"github.com/slbirdwatch/backend/internal/storage"
+	"golang.org/x/sync/errgroup"
 )
 
 // LIB-12: seed species photos from Wikimedia. Per batch of 50 species:
@@ -254,8 +255,8 @@ func (a *Server) seedImages(ctx context.Context, wc *wikiClient, limit int) (fou
 		}
 
 		var mu sync.Mutex
-		var wg sync.WaitGroup
-		sem := make(chan struct{}, 2) // polite parallelism for upload.wikimedia.org
+		var g errgroup.Group
+		g.SetLimit(2) // polite parallelism for upload.wikimedia.org
 		for _, s := range batch {
 			f, ok := info[files[s.sci]]
 			if !ok {
@@ -265,11 +266,7 @@ func (a *Server) seedImages(ctx context.Context, wc *wikiClient, limit int) (fou
 				mu.Unlock()
 				continue
 			}
-			wg.Add(1)
-			sem <- struct{}{}
-			go func() {
-				defer wg.Done()
-				defer func() { <-sem }()
+			g.Go(func() error {
 				err := a.storeSpeciesImage(ctx, wc, s.id, f)
 				mu.Lock()
 				defer mu.Unlock()
@@ -278,12 +275,13 @@ func (a *Server) seedImages(ctx context.Context, wc *wikiClient, limit int) (fou
 					log.Printf("species %d (%s): %v (will retry on next run)", s.id, s.sci, err)
 					failed++
 					retryLater = append(retryLater, s.id)
-					return
+					return nil
 				}
 				found++
-			}()
+				return nil
+			})
 		}
-		wg.Wait()
+		g.Wait()
 		log.Printf("seed-images: %d looked up, %d with photos, %d without, %d to retry", done, found, missing, failed)
 	}
 	return found, missing, nil

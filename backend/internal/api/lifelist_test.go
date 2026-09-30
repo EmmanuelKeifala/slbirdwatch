@@ -26,6 +26,8 @@ func TestLifeList(t *testing.T) {
 	_, o := call("POST", "/observations", me, `{"species_id":`+crow+`,"observed_at":"`+now.Add(-48*time.Hour).Format(time.RFC3339)+`","lat":8.4,"lng":-13.2}`)
 	call("POST", "/observations/"+strconv.Itoa(int(o["id"].(float64)))+"/identifications", ver, `{"species_id":`+crow+`}`)
 	call("POST", "/observations", me, `{"species_id":`+houseCrow+`,"observed_at":"`+now.Format(time.RFC3339)+`","lat":8.5,"lng":-13.2}`)
+	// A recent sighting with no species yet must not break "out there now" (NULL in an IN list).
+	call("POST", "/observations", me, `{"observed_at":"`+now.Format(time.RFC3339)+`","lat":8.5,"lng":-13.2}`)
 
 	_, l := call("GET", "/me/lifelist", me, "")
 	items := l["items"].([]any)

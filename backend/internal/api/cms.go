@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"net/http"
 	"regexp"
 	"slices"
@@ -9,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // ADM-05: admins write lessons and weekly challenges.
@@ -96,7 +94,7 @@ func (a *Server) deleteLesson(w http.ResponseWriter, r *http.Request) {
 // GET /admin/challenges — this week and the next three (filled from templates where empty), for editing.
 func (a *Server) adminChallenges(w http.ResponseWriter, r *http.Request) {
 	wk := week(time.Now())
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		if err := a.ensureWeek(r.Context(), wk.AddDate(0, 0, 7*i)); err != nil {
 			internalError(w, "admin challenges", err)
 			return
@@ -152,8 +150,7 @@ func (a *Server) putChallenge(w http.ResponseWriter, r *http.Request) {
 	}
 	tag, err := a.db.Exec(r.Context(), `UPDATE challenges SET kind = $2, param = $3, title = $4, description = $5, goal = $6
 		WHERE id = $1 AND week >= $7`, id, c.Kind, c.Param, c.Title, c.Description, c.Goal, week(time.Now()))
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23514" { // kind check
+	if pgCode(err) == checkViolation { // kind check
 		writeError(w, http.StatusBadRequest, "unknown challenge kind")
 		return
 	}

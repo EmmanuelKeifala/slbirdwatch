@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -58,10 +57,7 @@ func (a *Server) scanUser(row pgx.Row, extra ...any) (user, error) {
 	err := row.Scan(append([]any{&u.ID, &u.Email, &u.DisplayName, &u.Role, &u.CreatedAt,
 		&avatarKey, &u.HomeArea, &u.ExperienceLevel, &u.Bio, &u.DefaultLicence, &u.HideLocations, &u.PrivateProfile, &u.GuidelinesOK,
 		&u.NotifyIDs, &u.NotifyStatus, &u.HasPassword, &u.NotifyComments, &u.NotifyReminders, &u.HideFromBoards}, extra...)...)
-	if avatarKey != nil {
-		url := a.media.URL(*avatarKey)
-		u.AvatarURL = &url
-	}
+	u.AvatarURL = a.mediaURL(avatarKey)
 	return u, err
 }
 
@@ -186,8 +182,7 @@ func (a *Server) signup(w http.ResponseWriter, r *http.Request) {
 	u, err := a.scanUser(a.db.QueryRow(r.Context(),
 		`INSERT INTO users (email, password_hash, display_name) VALUES ($1, $2, $3) RETURNING `+userColumns,
 		c.Email, string(hash), c.DisplayName))
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+	if pgCode(err) == uniqueViolation {
 		writeError(w, http.StatusConflict, "an account with this email already exists")
 		return
 	}

@@ -136,7 +136,7 @@ func (xc *xenoClient) download(ctx context.Context, fileURL, dest string) error 
 
 // seedSounds fetches recordings for up to `limit` extant species not yet looked up. Resumable.
 func (a *Server) seedSounds(ctx context.Context, xc *xenoClient, limit int) (found, missing, failed int, err error) {
-	for n := 0; n < limit; n++ {
+	for n := range limit {
 		var id int64
 		var sci, genus string
 		err := a.db.QueryRow(ctx, `

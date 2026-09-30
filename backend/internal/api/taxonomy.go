@@ -50,8 +50,7 @@ func (a *Server) addLocalName(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err := a.db.Exec(r.Context(), `INSERT INTO species_local_names (species_id, name, language) VALUES ($1, $2, $3)
 		ON CONFLICT (species_id, name) DO UPDATE SET language = excluded.language`, id, n.Name, n.Language)
-	var fk interface{ SQLState() string }
-	if errors.As(err, &fk) && fk.SQLState() == "23503" {
+	if pgCode(err) == foreignKeyViolation {
 		http.NotFound(w, r)
 		return
 	}

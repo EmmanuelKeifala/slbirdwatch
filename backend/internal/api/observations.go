@@ -85,16 +85,10 @@ func (a *Server) scanObservation(row pgx.Row) (observation, error) {
 	if csID != nil {
 		o.CommunitySpecies = &speciesRef{ID: *csID, EnglishName: *csEn, ScientificName: *csSci}
 	}
-	if avatar != nil {
-		u := a.media.URL(*avatar)
-		o.Observer.AvatarURL = &u
-	}
+	o.Observer.AvatarURL = a.mediaURL(avatar)
 	if sid != nil {
 		o.Species = &speciesRef{ID: *sid, EnglishName: *en, ScientificName: *sci}
-		if thumb != nil {
-			u := a.media.URL(*thumb)
-			o.Species.ThumbURL = &u
-		}
+		o.Species.ThumbURL = a.mediaURL(thumb)
 	}
 	return o, err
 }
@@ -125,8 +119,7 @@ func (a *Server) readObservation(w http.ResponseWriter, r *http.Request) (observ
 	}
 	in.Notes = strings.TrimSpace(in.Notes)
 	if in.Count == nil {
-		one := 1
-		in.Count = &one
+		in.Count = new(1)
 	}
 	bad := func(msg string) (observationInput, bool) {
 		writeError(w, http.StatusBadRequest, msg)

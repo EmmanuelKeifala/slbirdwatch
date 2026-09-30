@@ -1,7 +1,6 @@
 package database
 
 import (
-	"context"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -10,7 +9,7 @@ import (
 // Needs the docker-compose Postgres; skipped when it isn't reachable.
 func testDB(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	db, err := Open(ctx)
 	if err == nil {
 		err = db.Ping(ctx)
@@ -23,7 +22,7 @@ func testDB(t *testing.T) *pgxpool.Pool {
 }
 
 func TestMigrateAndSeedAreIdempotent(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	db := testDB(t)
 
 	for range 2 {

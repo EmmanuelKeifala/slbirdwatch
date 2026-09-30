@@ -19,7 +19,7 @@ import (
 // testDB needs the docker-compose Postgres; skipped when it isn't reachable.
 func testDB(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	db, err := database.Open(ctx)
 	if err == nil {
 		err = db.Ping(ctx)
@@ -35,7 +35,7 @@ func testDB(t *testing.T) *pgxpool.Pool {
 // and clears rate-limit counters (httptest requests all come from 192.0.2.1).
 func testRouter(t *testing.T) http.Handler {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	db := testDB(t)
 	if err := database.Migrate(ctx, db); err != nil {
 		t.Fatal(err)

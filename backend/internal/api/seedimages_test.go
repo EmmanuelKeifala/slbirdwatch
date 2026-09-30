@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -67,7 +66,7 @@ func TestWikiClient(t *testing.T) {
 	srv := fakeWikimedia(t, nil)
 	wc := newWikiClient()
 	wc.base = srv.URL
-	ctx := context.Background()
+	ctx := t.Context()
 
 	files, err := wc.pageImages(ctx, []string{"Corvus albus", "Nobird x"})
 	if err != nil {
@@ -87,7 +86,7 @@ func TestWikiClient(t *testing.T) {
 }
 
 func TestStoreSpeciesImage(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	db := testDB(t)
 	if err := database.Migrate(ctx, db); err != nil {
 		t.Fatal(err)

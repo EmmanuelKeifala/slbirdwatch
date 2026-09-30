@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"maps"
 	"net/http"
 	"sort"
 	"strconv"
@@ -32,9 +33,7 @@ func mergeQuizStats(s, d quizStats) quizStats {
 		BestStreak: max(s.BestStreak, d.BestStreak), Missed: map[string]int{}, BySpecies: map[string][2]int{}, ByKind: map[string][2]int{}}
 	addPairs(out.BySpecies, s.BySpecies, d.BySpecies, true)
 	addPairs(out.ByKind, s.ByKind, d.ByKind, false)
-	for k, v := range s.Missed {
-		out.Missed[k] = v
-	}
+	maps.Copy(out.Missed, s.Missed)
 	for k, v := range d.Missed {
 		if _, err := strconv.ParseInt(k, 10, 64); err != nil {
 			continue

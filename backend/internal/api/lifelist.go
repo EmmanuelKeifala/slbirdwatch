@@ -61,7 +61,8 @@ func (a *Server) learnNext(w http.ResponseWriter, r *http.Request) {
 	rows, err := a.db.Query(r.Context(), `
 		WITH mine AS (SELECT DISTINCT coalesce(community_species_id, species_id) AS id FROM observations WHERE user_id = $1),
 		recent AS (SELECT DISTINCT coalesce(community_species_id, species_id) AS id FROM observations
-		           WHERE NOT hidden AND observed_at > now() - interval '30 days')
+		           WHERE NOT hidden AND observed_at > now() - interval '30 days'
+		             AND coalesce(community_species_id, species_id) IS NOT NULL) -- a NULL here would make IN yield NULL
 		SELECT s.id, s.english_name, s.scientific_name, coalesce(si.thumb_key, g.thumb_key), s.id IN (SELECT id FROM recent)
 		FROM region_species rs JOIN species s ON s.id = rs.species_id
 		LEFT JOIN species_images si ON si.species_id = s.id AND si.status = 'ok'

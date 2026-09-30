@@ -57,7 +57,7 @@ func TestFieldMarks(t *testing.T) {
 	if len(marks) != 1 || marks[0].(map[string]any)["x"].(float64) < 0.41 {
 		t.Fatalf("marks on the species page: %v", marks)
 	}
-	for i := 0; i < 7; i++ {
+	for i := range 7 {
 		mark(vi, fmt.Sprintf("mark %d", i), 0.1)
 	}
 	if code, _ := mark(vi, "one too many", 0.1); code != 400 {

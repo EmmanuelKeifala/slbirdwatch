@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -14,10 +13,10 @@ import (
 
 func TestListSpecies(t *testing.T) {
 	db := testDB(t)
-	if err := database.Migrate(context.Background(), db); err != nil {
+	if err := database.Migrate(t.Context(), db); err != nil {
 		t.Fatal(err)
 	}
-	media, err := storage.Open(context.Background())
+	media, err := storage.Open(t.Context())
 	if err != nil {
 		t.Skipf("s3 not available: %v", err)
 	}

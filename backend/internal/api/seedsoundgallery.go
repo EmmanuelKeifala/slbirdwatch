@@ -13,10 +13,10 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/slbirdwatch/backend/internal/storage"
+	"golang.org/x/sync/errgroup"
 )
 
 // LIB-09: go run ./cmd/birdwatch seed-sound-gallery [limit] — for each Sierra Leone species, up to 2 Xeno-canto recordings
@@ -175,17 +175,12 @@ func (a *Server) seedSoundGallery(ctx context.Context, xc *xenoClient, limit int
 		}
 		picked := pickSounds(recs)
 		errs := make([]error, len(picked))
-		var wg sync.WaitGroup
-		sem := make(chan struct{}, 2) // two downloads at a time, to stay polite
+		var g errgroup.Group
+		g.SetLimit(2) // two downloads at a time, to stay polite
 		for i, r := range picked {
-			wg.Add(1)
-			sem <- struct{}{}
-			go func() {
-				defer func() { <-sem; wg.Done() }()
-				errs[i] = a.storeGallerySound(ctx, xc, t.id, r)
-			}()
+			g.Go(func() error { errs[i] = a.storeGallerySound(ctx, xc, t.id, r); return nil })
 		}
-		wg.Wait()
+		g.Wait()
 		failed := false
 		for i, err := range errs {
 			if err != nil { // a slow or broken file is skipped, not fatal; the species is retried next run

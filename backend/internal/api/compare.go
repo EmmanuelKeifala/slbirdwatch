@@ -96,7 +96,7 @@ type compareItem struct {
 // GET /compare?ids=1,2,3 — 2 to 4 species side by side (LRN-01). Marks only one species shows are flagged.
 func (a *Server) compare(w http.ResponseWriter, r *http.Request) {
 	var ids []int64
-	for _, s := range strings.Split(r.URL.Query().Get("ids"), ",") {
+	for s := range strings.SplitSeq(r.URL.Query().Get("ids"), ",") {
 		if id, err := strconv.ParseInt(strings.TrimSpace(s), 10, 64); err == nil && !slices.Contains(ids, id) {
 			ids = append(ids, id)
 		}
@@ -190,8 +190,7 @@ func (a *Server) compareOne(ctx context.Context, id int64) (compareItem, error) 
 	if it.Image == nil { // no variant photo either: any gallery photo
 		var key string
 		if a.db.QueryRow(ctx, `SELECT key FROM species_gallery WHERE species_id = $1 ORDER BY id LIMIT 1`, id).Scan(&key) == nil {
-			u := a.media.URL(key)
-			it.Image = &u
+			it.Image = new(a.media.URL(key))
 		}
 	}
 

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -32,7 +31,7 @@ func TestRoleAtLeast(t *testing.T) {
 }
 
 func TestRequireRole(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	db := testDB(t)
 	if err := database.Migrate(ctx, db); err != nil {
 		t.Fatal(err)

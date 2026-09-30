@@ -2,7 +2,6 @@ package api
 
 import (
 	"compress/gzip"
-	"context"
 	"encoding/json"
 	"net/http/httptest"
 	"testing"
@@ -14,7 +13,7 @@ import (
 func TestPack(t *testing.T) {
 	h := testRouter(t)
 	cache, _ := database.OpenRedis()
-	cache.Del(context.Background(), "pack:sl:gz")
+	cache.Del(t.Context(), "pack:sl:gz")
 	get := func() (int, map[string]any, time.Duration) {
 		start := time.Now()
 		rec := httptest.NewRecorder()

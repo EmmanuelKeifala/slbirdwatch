@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/slbirdwatch/backend/internal/config"
 )
 
@@ -34,7 +33,7 @@ var (
 // googleClientIDs: the OAuth client ids whose tokens we accept (the web client id the app is configured with).
 func googleClientIDs() []string {
 	var out []string
-	for _, id := range strings.Split(config.Env("GOOGLE_CLIENT_IDS", ""), ",") {
+	for id := range strings.SplitSeq(config.Env("GOOGLE_CLIENT_IDS", ""), ",") {
 		if id = strings.TrimSpace(id); id != "" {
 			out = append(out, id)
 		}
@@ -181,8 +180,7 @@ func (a *Server) googleSignIn(w http.ResponseWriter, r *http.Request) {
 		u, err = a.scanUser(a.db.QueryRow(r.Context(), `INSERT INTO users (email, display_name, google_sub) VALUES ($1, $2, $3) `+ret,
 			email, name, c.Sub), &banned, &suspendedUntil)
 	}
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+	if pgCode(err) == uniqueViolation {
 		writeError(w, http.StatusConflict, "an account with this email is linked to a different Google account")
 		return
 	}

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"net/http"
 	"slices"
 	"strconv"
@@ -9,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // notBlocked is an SQL condition: neither the viewer ($1) nor `col` has blocked the other.
@@ -40,8 +38,7 @@ func (a *Server) block(w http.ResponseWriter, r *http.Request) {
 	} else {
 		_, err = a.db.Exec(r.Context(), `INSERT INTO blocks (blocker_id, blocked_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, userID(r), id)
 	}
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+	if pgCode(err) == foreignKeyViolation {
 		http.NotFound(w, r)
 		return
 	}
@@ -65,10 +62,7 @@ func (a *Server) myBlocks(w http.ResponseWriter, r *http.Request) {
 		var o observer
 		var avatar *string
 		err := row.Scan(&o.ID, &o.DisplayName, &avatar)
-		if avatar != nil {
-			u := a.media.URL(*avatar)
-			o.AvatarURL = &u
-		}
+		o.AvatarURL = a.mediaURL(avatar)
 		return o, err
 	})
 	if err != nil {
@@ -104,11 +98,10 @@ func (a *Server) reportUser(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err := a.db.Exec(r.Context(), `INSERT INTO user_reports (reporter_id, reported_id, reason, note) VALUES ($1, $2, $3, $4)`,
 		userID(r), id, body.Reason, body.Note)
-	var pgErr *pgconn.PgError
 	switch {
-	case errors.As(err, &pgErr) && pgErr.Code == "23505":
+	case pgCode(err) == uniqueViolation:
 		writeError(w, http.StatusConflict, "you've already reported this")
-	case errors.As(err, &pgErr) && pgErr.Code == "23503":
+	case pgCode(err) == foreignKeyViolation:
 		http.NotFound(w, r)
 	case err != nil:
 		internalError(w, "report user", err)

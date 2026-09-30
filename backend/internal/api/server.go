@@ -30,6 +30,14 @@ type Server struct {
 	active activeUsers        // ADM-06 daily-active bookkeeping, deduplicated in memory
 }
 
+// mediaURL is where clients fetch an optional stored object; nil stays nil.
+func (a *Server) mediaURL(key *string) *string {
+	if key == nil {
+		return nil
+	}
+	return new(a.media.URL(*key))
+}
+
 func New(db *pgxpool.Pool, cache *redis.Client, media *storage.Store) *Server {
 	return &Server{db: db, cache: cache, media: media}
 }

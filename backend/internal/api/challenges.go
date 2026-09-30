@@ -54,7 +54,7 @@ func (a *Server) ensureWeek(ctx context.Context, wk time.Time) error {
 	f := challengeFamilies[n%len(challengeFamilies)]
 	rows := [][]any{{0, "family_photo", f.sci, fmt.Sprintf("Photograph 3 %s", f.name),
 		fmt.Sprintf("Photograph 3 different species of %s this week.", f.name), 3}}
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		t := challengeTemplates[(2*n+i)%len(challengeTemplates)]
 		rows = append(rows, []any{i + 1, t.kind, "", t.title, t.description, t.goal})
 	}

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -44,15 +43,15 @@ func TestXenoBest(t *testing.T) {
 	}))
 	defer srv.Close()
 	xc := &xenoClient{http: srv.Client(), key: "k", base: srv.URL, ua: "SLBirdwatch/test"}
-	rec, err := xc.best(context.Background(), "Corvus", "albus")
+	rec, err := xc.best(t.Context(), "Corvus", "albus")
 	if err != nil || rec == nil || rec.ID != "3" {
 		t.Fatalf("best = %+v, %v (want the CC-licensed song)", rec, err)
 	}
-	if rec, err := xc.best(context.Background(), "Corvus", "nobird"); err != nil || rec != nil {
+	if rec, err := xc.best(t.Context(), "Corvus", "nobird"); err != nil || rec != nil {
 		t.Fatalf("no recordings: %+v %v", rec, err)
 	}
 	xc.key = "wrong"
-	if _, err := xc.best(context.Background(), "Corvus", "albus"); err == nil {
+	if _, err := xc.best(t.Context(), "Corvus", "albus"); err == nil {
 		t.Fatal("API error not surfaced")
 	}
 }

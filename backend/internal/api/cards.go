@@ -58,7 +58,7 @@ func (a *Server) speciesCards(w http.ResponseWriter, r *http.Request) {
 // GET /species/families-of?ids=1,2 (up to 3000) — species id → {name, family}, for the progress dashboard (LRN-06).
 func (a *Server) familiesOf(w http.ResponseWriter, r *http.Request) {
 	var all []int64
-	for _, s := range strings.Split(r.URL.Query().Get("ids"), ",") { // quizFocus stops at 100; this list can be long
+	for s := range strings.SplitSeq(r.URL.Query().Get("ids"), ",") { // quizFocus stops at 100; this list can be long
 		if id, err := strconv.ParseInt(strings.TrimSpace(s), 10, 64); err == nil && len(all) < 3000 {
 			all = append(all, id)
 		}

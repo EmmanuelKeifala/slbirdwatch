@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // COM-03 groups and clubs: members join with a 6-character code; only members see a group, its members, their
@@ -221,14 +220,13 @@ func (a *Server) ownGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var code string
-	for try := 0; try < 6; try++ {
+	for range 6 {
 		code = newJoinCode()
 		_, err := a.db.Exec(r.Context(), `UPDATE groups SET join_code = $2 WHERE id = $1`, g.ID, code)
-		var pgErr *pgconn.PgError
 		if err == nil {
 			break
 		}
-		if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
+		if pgCode(err) != uniqueViolation {
 			internalError(w, "new code", err)
 			return
 		}
@@ -286,10 +284,7 @@ func (a *Server) getGroup(w http.ResponseWriter, r *http.Request) {
 		var m groupMember
 		var avatar *string
 		err := row.Scan(&m.ID, &m.DisplayName, &avatar, &m.Species, &m.WeekXP, &m.Owner)
-		if avatar != nil {
-			u := a.media.URL(*avatar)
-			m.AvatarURL = &u
-		}
+		m.AvatarURL = a.mediaURL(avatar)
 		return m, err
 	})
 	if err != nil {
@@ -309,10 +304,7 @@ func (a *Server) getGroup(w http.ResponseWriter, r *http.Request) {
 		var o groupOuting
 		var avatar *string
 		err := row.Scan(&o.ID, &o.User.ID, &o.User.DisplayName, &avatar, &o.StartedAt, &o.DistanceM, &o.Species)
-		if avatar != nil {
-			u := a.media.URL(*avatar)
-			o.User.AvatarURL = &u
-		}
+		o.User.AvatarURL = a.mediaURL(avatar)
 		return o, err
 	})
 	if err != nil {

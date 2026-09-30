@@ -26,8 +26,8 @@ func dHash(jpg []byte) (int64, error) {
 	small := image.NewGray(image.Rect(0, 0, 9, 8))
 	draw.ApproxBiLinear.Scale(small, small.Bounds(), src, src.Bounds(), draw.Src, nil)
 	var h uint64
-	for y := 0; y < 8; y++ {
-		for x := 0; x < 8; x++ {
+	for y := range 8 {
+		for x := range 8 {
 			h <<= 1
 			if small.GrayAt(x, y).Y > small.GrayAt(x+1, y).Y {
 				h |= 1

@@ -94,10 +94,7 @@ func (a *Server) getEvent(w http.ResponseWriter, r *http.Request) {
 		var b eventBirder
 		var avatar *string
 		err := row.Scan(&b.User.ID, &b.User.DisplayName, &avatar, &b.Species)
-		if avatar != nil {
-			u := a.media.URL(*avatar)
-			b.User.AvatarURL = &u
-		}
+		b.User.AvatarURL = a.mediaURL(avatar)
 		return b, err
 	})
 	if err != nil {

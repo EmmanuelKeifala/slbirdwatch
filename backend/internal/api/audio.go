@@ -57,14 +57,10 @@ func run(ctx context.Context, name string, args ...string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 	out, err := exec.CommandContext(ctx, name, args...).Output()
-	if err != nil {
-		var ee *exec.ExitError
-		if errors.As(err, &ee) {
-			return nil, fmt.Errorf("%s: %s", name, strings.TrimSpace(string(ee.Stderr)))
-		}
-		return nil, err
+	if ee, ok := errors.AsType[*exec.ExitError](err); ok {
+		return nil, fmt.Errorf("%s: %s", name, strings.TrimSpace(string(ee.Stderr)))
 	}
-	return out, nil
+	return out, err
 }
 
 var errNotAudio = errors.New("that file isn't a recording we can read")

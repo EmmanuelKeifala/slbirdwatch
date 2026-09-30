@@ -109,9 +109,8 @@ func (a *Server) birdsWhere(ctx context.Context, families []string, picked []int
 	var ms int
 	var snd gallerySound
 	_, err = pgx.ForEachRow(rows, []any{&sid, &snd.URL, &snd.SpectrogramURL, &ms, &snd.Kind, &snd.Credit, &snd.Licence, &snd.SourceURL}, func() error {
-		s := snd
-		s.URL, s.SpectrogramURL, s.DurationS = a.media.URL(s.URL), a.media.URL(s.SpectrogramURL), float64(ms)/1000
-		birds[index[sid]].Sound = &s
+		snd.URL, snd.SpectrogramURL, snd.DurationS = a.media.URL(snd.URL), a.media.URL(snd.SpectrogramURL), float64(ms)/1000
+		birds[index[sid]].Sound = new(snd) // a copy: snd is reused for the next row
 		return nil
 	})
 	return birds, err
