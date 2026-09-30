@@ -1,3 +1,4 @@
 .env
 backend
 *_test.go
+birdwatch

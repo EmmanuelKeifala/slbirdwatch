@@ -1,6 +1,7 @@
 node_modules/
 .DS_Store
 backend/.env
+backend/birdwatch
 
 # Firebase service-account keys (upload to EAS, never commit)
 *firebase-adminsdk*.json

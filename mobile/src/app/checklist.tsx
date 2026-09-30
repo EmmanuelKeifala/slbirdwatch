@@ -11,6 +11,7 @@ import { useAuth } from '@/auth';
 import { Pressable } from '@/Pressable';
 import { ScreenHeader } from '@/ScreenHeader';
 import { font, radius, space, tileFor, useColors } from '@/theme';
+import { roughPosition } from '@/location';
 
 const FREETOWN = { lat: 8.484, lng: -13.234 };
 const RADII = [2, 5, 10, 25, 50];
@@ -32,7 +33,7 @@ export default function Checklist() {
     (async () => {
       try {
         if (!(await Location.requestForegroundPermissionsAsync()).granted) throw new Error();
-        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        const pos = await roughPosition();
         setSpot({ lat: pos.coords.latitude, lng: pos.coords.longitude, mine: true });
       } catch {
         setSpot({ ...FREETOWN, mine: false }); // no location: show Freetown rather than nothing

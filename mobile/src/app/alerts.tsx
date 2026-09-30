@@ -9,6 +9,7 @@ import { useAuth } from '@/auth';
 import { Pressable } from '@/Pressable';
 import { ScreenHeader } from '@/ScreenHeader';
 import { font, radius, space, useColors } from '@/theme';
+import { roughPosition } from '@/location';
 
 const RADII = [10, 25, 50];
 
@@ -28,7 +29,7 @@ export default function Alerts() {
       if (locate) {
         if (!(await Location.requestForegroundPermissionsAsync()).granted)
           throw new Error('Allow location so we know which area to watch.');
-        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        const pos = await roughPosition();
         // a couple of decimals is plenty for an alert area, and keeps your exact spot off our servers
         next = { ...next, lat: Math.round(pos.coords.latitude * 100) / 100, lng: Math.round(pos.coords.longitude * 100) / 100 };
       }

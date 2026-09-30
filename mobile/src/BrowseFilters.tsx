@@ -7,6 +7,7 @@ import { Pressable } from '@/Pressable';
 
 import { getFeatureFields, listFamilies, type BrowseFilters, type Family, type FeatureField } from '@/api';
 import { font, radius, space, useColors } from '@/theme';
+import { roughPosition } from '@/location';
 
 type Dim = 'family' | 'habitat' | 'size' | 'colour';
 const FIELD: Record<Exclude<Dim, 'family'>, string> = { habitat: 'habitat', size: 'size', colour: 'colours' };
@@ -47,7 +48,7 @@ export function BrowseFilterBar({ value, onChange }: { value: BrowseFilters; onC
     try {
       const perm = await Location.requestForegroundPermissionsAsync();
       if (!perm.granted) throw new Error('Allow location to see birds seen near you.');
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const pos = await roughPosition();
       onChange({ ...value, near: { lat: pos.coords.latitude, lng: pos.coords.longitude } });
     } catch (e) {
       setLocError(e instanceof Error ? e.message : String(e));

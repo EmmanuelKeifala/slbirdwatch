@@ -11,6 +11,7 @@ import { useAuth } from '@/auth';
 import { Pressable } from '@/Pressable';
 import { ScreenHeader } from '@/ScreenHeader';
 import { font, radius, space, useColors } from '@/theme';
+import { roughPosition } from '@/location';
 
 const MEDAL = ['#F4B400', '#A7A9B8', '#C98A4B'];
 
@@ -33,7 +34,7 @@ export default function Leaderboard() {
         if (scope === 'near') {
           try {
             if (!(await Location.requestForegroundPermissionsAsync()).granted) throw new Error();
-            const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+            const pos = await roughPosition();
             near = { lat: pos.coords.latitude, lng: pos.coords.longitude };
             setNote(null);
           } catch {

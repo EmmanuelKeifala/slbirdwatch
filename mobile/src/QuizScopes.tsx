@@ -8,6 +8,7 @@ import { getFeatureFields } from '@/api';
 import { signInFirst } from '@/nav';
 import { Pressable } from '@/Pressable';
 import { font, radius, space, useColors } from '@/theme';
+import { roughPosition } from '@/location';
 
 type Icon = ComponentProps<typeof Feather>['name'];
 
@@ -24,7 +25,7 @@ export function QuizScopes({ signedIn }: { signedIn: boolean }) {
     setLocating(true);
     try {
       if (!(await Location.requestForegroundPermissionsAsync()).granted) throw new Error('Allow location to quiz on the birds around you.');
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const pos = await roughPosition();
       router.push({ pathname: '/quiz', params: { scope: 'near', lat: String(pos.coords.latitude), lng: String(pos.coords.longitude) } });
     } catch (e) {
       Alert.alert('Location needed', e instanceof Error ? e.message : String(e));

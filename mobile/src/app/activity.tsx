@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { activityFeed, myFollowing } from '@/api';
 import { useAuth } from '@/auth';
 import { signInFirst } from '@/nav';
+import { roughPosition } from '@/location';
 import { ObservationGrid } from '@/ObservationGrid';
 import { Pressable } from '@/Pressable';
 import { ScreenHeader } from '@/ScreenHeader';
@@ -27,7 +28,7 @@ export default function Activity() {
     (async () => {
       try {
         if (!(await Location.requestForegroundPermissionsAsync()).granted) throw new Error();
-        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        const pos = await roughPosition(); // the feed covers 25 km, so a rough, quick position will do
         setSpot({ lat: pos.coords.latitude, lng: pos.coords.longitude, mine: true });
       } catch {
         setSpot({ ...FREETOWN, mine: false });
