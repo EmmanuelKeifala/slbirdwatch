@@ -12,7 +12,6 @@
     "expo-asset": "~57.0.18",
     "expo-audio": "~57.0.5",
     "expo-constants": "~57.0.19",
-    "expo-dev-client": "~57.0.19",
     "expo-device": "~57.0.2",
     "expo-document-picker": "~57.0.2",
     "expo-file-system": "~57.0.7",
@@ -46,13 +45,11 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "start": "expo start --dev-client",
+    "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web",
     "lint": "expo lint",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/exif.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/stats.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/trim.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/season.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/outboxRules.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/outingMath.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/srs.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/fuzzy.test.mts",
-    "start:go": "expo start --go"
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/exif.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/stats.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/trim.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/season.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/outboxRules.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/outingMath.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/srs.test.mts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/fuzzy.test.mts"
   },
   "private": true,
   "reanimated": {

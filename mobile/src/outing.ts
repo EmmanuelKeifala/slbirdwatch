@@ -9,7 +9,7 @@ import { addFix, type LatLng } from '@/outingMath';
 // outing is active and the app is open (NFR-05: no background tracking). Ended outings wait in a small queue
 // until they reach the server; sightings logged on the outing carry its id and link up when they upload.
 
-export type Outing = { clientId: string; startedAt: string; endedAt?: string; route: LatLng[]; userId: number; logged?: number };
+type Outing = { clientId: string; startedAt: string; endedAt?: string; route: LatLng[]; userId: number; logged?: number };
 
 type State = { active: Outing | null; pending: Outing[]; serverIds: Record<string, number> };
 
@@ -77,7 +77,7 @@ export async function resumeTracking() {
   }
 }
 
-export function stopTracking() {
+function stopTracking() {
   watch?.remove();
   watch = null;
 }

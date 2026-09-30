@@ -1,7 +1,7 @@
 // QZ-05: is a typed bird name close enough? Case, accents, hyphens and punctuation don't matter, and small typos
 // are forgiven: 1 edit for names up to 8 letters, 2 up to 16, 3 beyond. Either the English or scientific name.
 
-export function normalise(s: string) {
+function normalise(s: string) {
   return s
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')

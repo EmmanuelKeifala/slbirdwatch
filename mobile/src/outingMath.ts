@@ -2,7 +2,7 @@
 export type LatLng = [number, number];
 
 /** Metres between two points (haversine). */
-export function metres(a: LatLng, b: LatLng): number {
+function metres(a: LatLng, b: LatLng): number {
   const r = 6371000;
   const rad = Math.PI / 180;
   const dLat = (b[0] - a[0]) * rad;

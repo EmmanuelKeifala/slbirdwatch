@@ -1,6 +1,6 @@
 // OBS-09 retry rules, kept pure so `npm test` can check them.
 
-export type Failure = 'offline' | 'retry' | 'auth' | 'fatal';
+type Failure = 'offline' | 'retry' | 'auth' | 'fatal';
 
 /** fetch throws TypeError with no response (no signal, server unreachable); the API client throws errors with a status. */
 export function classify(err: unknown): Failure {

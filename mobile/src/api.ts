@@ -29,7 +29,7 @@ export type Species = {
 };
 
 export type Page<T> = { items: T[]; next_offset: number | null };
-export type CountedPage<T> = Page<T> & { total: number };
+type CountedPage<T> = Page<T> & { total: number };
 
 /** LIB-03 browse filters (habitat/size/colour values come from GET /features). */
 export type BrowseFilters = { family?: string; habitat?: string; size?: string; colour?: string; near?: { lat: number; lng: number } };

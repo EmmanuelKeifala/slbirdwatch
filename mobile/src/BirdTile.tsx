@@ -9,7 +9,7 @@ import { BirdArt } from '@/BirdArt';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 
 /** Pastel tile holding a bird photo, or an illustrated bird when there's no photo. */
-export function BirdTile({
+function BirdTile({
   id,
   uri,
   style,

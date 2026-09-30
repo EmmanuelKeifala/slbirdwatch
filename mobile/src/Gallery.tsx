@@ -26,7 +26,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 // Sierra Leone: rains May–October, dry season November–April.
 const season = (m: number | null) => (m === null ? null : m >= 5 && m <= 10 ? 'Rainy season' : 'Dry season');
 
-export function caption(p: GalleryPhoto) {
+function caption(p: GalleryPhoto) {
   const when = p.month ? `${season(p.month)} (${MONTHS[p.month - 1]})` : '';
   return [tagText(p.tags), when].filter(Boolean).join(' · ');
 }

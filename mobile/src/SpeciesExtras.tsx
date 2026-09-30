@@ -15,7 +15,7 @@ import { font, radius, space, useColors } from '@/theme';
 type Icon = ComponentProps<typeof Feather>['name'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-export const IUCN = {
+const IUCN = {
   '': '',
   LC: 'Least concern',
   NT: 'Near threatened',
@@ -29,7 +29,7 @@ export const IUCN = {
 const THREATENED = ['VU', 'EN', 'CR', 'EW', 'EX'];
 
 /** "18–20 cm" → a familiar comparison. */
-export function sizeLike(length: string) {
+function sizeLike(length: string) {
   const cm = parseFloat(length);
   if (!cm) return '';
   if (cm < 12) return 'Smaller than a sparrow';

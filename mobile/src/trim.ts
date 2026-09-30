@@ -1,6 +1,6 @@
 // OBS-03 trim handles: keep at least MIN_S and at most MAX_S seconds, inside the recording.
-export const MIN_S = 0.5;
-export const MAX_S = 60;
+const MIN_S = 0.5;
+const MAX_S = 60;
 
 export type Trim = { start: number; end: number };
 

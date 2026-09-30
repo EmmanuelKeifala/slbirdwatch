@@ -10,7 +10,7 @@ import { Pressable } from '@/Pressable';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 
 type Icon = ComponentProps<typeof Feather>['name'];
-export type HeroAction = { icon: Icon; label: string; count?: number; onPress: () => void };
+type HeroAction = { icon: Icon; label: string; count?: number; onPress: () => void };
 
 /**
  * The big picture at the top of a bird or sighting page: the cached thumbnail shows at once and the full photo fades over it, a soft gradient

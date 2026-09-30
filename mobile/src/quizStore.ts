@@ -12,7 +12,7 @@ const file = () => new File(Paths.document, 'quiz-stats.json');
 let serverTotal: QuizStats | null = null; // last known account progress
 
 /** Changes not yet on the server (a guest's whole progress). */
-export function loadStats(): QuizStats {
+function loadStats(): QuizStats {
   try {
     const f = file();
     return f.exists ? { ...emptyStats, ...JSON.parse(f.textSync()) } : emptyStats;

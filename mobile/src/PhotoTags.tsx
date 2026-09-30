@@ -5,7 +5,7 @@ import { Pressable } from '@/Pressable';
 import { font, radius, space, useColors } from '@/theme';
 
 // LIB-08: photo tags, in display order, and the pairs that can't both apply (the server checks too).
-export const TAGS: { tag: PhotoTag; label: string }[] = [
+const TAGS: { tag: PhotoTag; label: string }[] = [
   { tag: 'male', label: 'Male' },
   { tag: 'female', label: 'Female' },
   { tag: 'juvenile', label: 'Young' },
@@ -36,7 +36,7 @@ export const tagText = (tags: Tag[]) =>
     .join(' · ');
 
 /** Turning a tag on drops any tag it clashes with. */
-export function toggleTag<T extends Tag>(tags: T[], tag: T): T[] {
+function toggleTag<T extends Tag>(tags: T[], tag: T): T[] {
   if (tags.includes(tag)) return tags.filter((t) => t !== tag);
   const out = CLASH.flatMap(([a, b]) => (a === tag ? [b] : b === tag ? [a] : []));
   return ALL.map((t) => t.tag as T).filter((t) => t === tag || (tags.includes(t) && !out.includes(t)));
