@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -29,13 +28,12 @@ func (a *Server) addFieldMark(w http.ResponseWriter, r *http.Request) {
 		Y        float64 `json:"y"`
 		Label    string  `json:"label"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 1024, &body) {
 		return
 	}
 	body.Label = strings.TrimSpace(body.Label)
 	if n := len([]rune(body.Label)); n < 2 || n > 40 || body.X < 0 || body.X > 1 || body.Y < 0 || body.Y > 1 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "a label of 2–40 characters, and a spot on the photo"})
+		writeError(w, http.StatusBadRequest, "a label of 2–40 characters, and a spot on the photo")
 		return
 	}
 	kind, idStr, _ := strings.Cut(body.MediaRef, ":")
@@ -51,11 +49,11 @@ func (a *Server) addFieldMark(w http.ResponseWriter, r *http.Request) {
 		err = pgx.ErrNoRows
 	}
 	if errors.Is(err, pgx.ErrNoRows) || (err == nil && !ref) {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "field marks go on reference photos: mark it as one first"})
+		writeError(w, http.StatusNotFound, "field marks go on reference photos: mark it as one first")
 		return
 	}
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": `media_ref must be "gallery:<id>" or "photo:<id>"`})
+		writeError(w, http.StatusBadRequest, `media_ref must be "gallery:<id>" or "photo:<id>"`)
 		return
 	}
 	var m photoMark
@@ -65,7 +63,7 @@ func (a *Server) addFieldMark(w http.ResponseWriter, r *http.Request) {
 		RETURNING id, x, y, label`, kind+":"+strconv.FormatInt(id, 10), body.X, body.Y, body.Label, userID(r), maxMarksPerPhoto).
 		Scan(&m.ID, &m.X, &m.Y, &m.Label)
 	if errors.Is(err, pgx.ErrNoRows) {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "a photo can have at most 8 marks"})
+		writeError(w, http.StatusBadRequest, "a photo can have at most 8 marks")
 		return
 	}
 	if err != nil {
@@ -77,9 +75,8 @@ func (a *Server) addFieldMark(w http.ResponseWriter, r *http.Request) {
 
 // DELETE /photos/marks/{id} (verifier+)
 func (a *Server) deleteFieldMark(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	tag, err := a.db.Exec(r.Context(), `DELETE FROM field_marks WHERE id = $1`, id)

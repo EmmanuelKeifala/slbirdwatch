@@ -11,7 +11,7 @@ func TestChallenges(t *testing.T) {
 	db := testDB(t)
 	_, out := call("POST", "/auth/signup", "", creds(email, "correct horse", "Ada"))
 	tok := out["token"].(string)
-	_, out = call("POST", "/auth/signup", "", creds("b-"+email, "correct horse", "Bo"))
+	call("POST", "/auth/signup", "", creds("b-"+email, "correct horse", "Bo"))
 	t.Cleanup(func() { db.Exec(context.Background(), `DELETE FROM users WHERE email = $1`, "b-"+email) })
 	var me, other int64
 	db.QueryRow(t.Context(), `SELECT id FROM users WHERE email = $1`, email).Scan(&me)

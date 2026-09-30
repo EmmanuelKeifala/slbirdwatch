@@ -1,10 +1,8 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -23,7 +21,7 @@ type idTip struct {
 
 // GET /species/{id}/tips — the bird's general tip first, then its pair tips, newest first.
 func (a *Server) listTips(w http.ResponseWriter, r *http.Request) {
-	id, ok := speciesPathID(w, r)
+	id, ok := pathID(w, r, "id")
 	if !ok {
 		return
 	}
@@ -58,7 +56,7 @@ func (a *Server) listTips(w http.ResponseWriter, r *http.Request) {
 // PUT /species/{id}/tips {other_species_id?, text} (verifier+) — writes the tip for this bird or this pair,
 // replacing what was there.
 func (a *Server) putTip(w http.ResponseWriter, r *http.Request) {
-	id, ok := speciesPathID(w, r)
+	id, ok := pathID(w, r, "id")
 	if !ok {
 		return
 	}
@@ -66,19 +64,18 @@ func (a *Server) putTip(w http.ResponseWriter, r *http.Request) {
 		Other *int64 `json:"other_species_id"`
 		Text  string `json:"text"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 8192, &body) {
 		return
 	}
 	body.Text = strings.TrimSpace(body.Text)
 	if n := len([]rune(body.Text)); n < 10 || n > 1000 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "a tip is 10 to 1000 characters"})
+		writeError(w, http.StatusBadRequest, "a tip is 10 to 1000 characters")
 		return
 	}
 	a1, a2 := id, body.Other
 	if body.Other != nil {
 		if *body.Other == id {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "pick a different bird to compare with"})
+			writeError(w, http.StatusBadRequest, "pick a different bird to compare with")
 			return
 		}
 		lo, hi := min(id, *body.Other), max(id, *body.Other)
@@ -92,7 +89,7 @@ func (a *Server) putTip(w http.ResponseWriter, r *http.Request) {
 		ON CONFLICT (species_id, other_species_id) DO UPDATE SET text = $3, author_id = $4, updated_at = now()
 		RETURNING id, updated_at`, a1, a2, body.Text, userID(r)).Scan(&t.ID, &t.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "no such species"})
+		writeError(w, http.StatusNotFound, "no such species")
 		return
 	}
 	if err != nil {
@@ -104,9 +101,8 @@ func (a *Server) putTip(w http.ResponseWriter, r *http.Request) {
 
 // DELETE /tips/{id} (verifier+)
 func (a *Server) deleteTip(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	tag, err := a.db.Exec(r.Context(), `DELETE FROM id_tips WHERE id = $1`, id)

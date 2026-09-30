@@ -28,7 +28,7 @@ func (a *Server) savePushToken(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body); err != nil ||
 		!strings.HasPrefix(body.Token, "ExponentPushToken[") || len(body.Token) > 200 || len(body.Platform) > 20 || len(body.Device) > 80 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "token must be an Expo push token"})
+		writeError(w, http.StatusBadRequest, "token must be an Expo push token")
 		return
 	}
 	// A phone that changes hands moves its token to the new person.
@@ -162,7 +162,9 @@ func (a *Server) postPushes(ctx context.Context, msgs []pushMessage) error {
 		}
 		for i, ticket := range out.Data {
 			if ticket.Status == "error" && ticket.Details.Error == "DeviceNotRegistered" && i < len(batch) {
-				a.db.Exec(ctx, `DELETE FROM push_tokens WHERE token = $1`, batch[i].To)
+				if _, err := a.db.Exec(ctx, `DELETE FROM push_tokens WHERE token = $1`, batch[i].To); err != nil {
+					log.Printf("drop unregistered push token: %v", err)
+				}
 			} else if ticket.Status == "error" {
 				log.Printf("expo push ticket: %s %s", ticket.Details.Error, ticket.Message)
 			}

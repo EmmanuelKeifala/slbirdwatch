@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -26,7 +25,7 @@ func (a *Server) nearbySites(w http.ResponseWriter, r *http.Request) {
 	lat, err1 := strconv.ParseFloat(la, 64)
 	lng, err2 := strconv.ParseFloat(lo, 64)
 	if !ok || err1 != nil || err2 != nil || lat < -90 || lat > 90 || lng < -180 || lng > 180 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "near must be lat,lng"})
+		writeError(w, http.StatusBadRequest, "near must be lat,lng")
 		return
 	}
 	rows, err := a.db.Query(r.Context(), `
@@ -54,21 +53,20 @@ func (a *Server) createSite(w http.ResponseWriter, r *http.Request) {
 		Lat  *float64 `json:"lat"`
 		Lng  *float64 `json:"lng"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 2048)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 2048, &body) {
 		return
 	}
 	body.Name = strings.Join(strings.Fields(body.Name), " ")
 	if n := len([]rune(body.Name)); n < 2 || n > 80 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "site name must be 2 to 80 characters"})
+		writeError(w, http.StatusBadRequest, "site name must be 2 to 80 characters")
 		return
 	}
 	if body.Lat == nil || body.Lng == nil || *body.Lat < -90 || *body.Lat > 90 || *body.Lng < -180 || *body.Lng > 180 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "a valid lat and lng are required"})
+		writeError(w, http.StatusBadRequest, "a valid lat and lng are required")
 		return
 	}
 	if a.rateLimited(r.Context(), "site:"+strconv.FormatInt(userID(r), 10), 30, time.Hour) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many new sites, try again later"})
+		writeError(w, http.StatusTooManyRequests, "too many new sites, try again later")
 		return
 	}
 	var s site
@@ -90,7 +88,7 @@ func (a *Server) createSite(w http.ResponseWriter, r *http.Request) {
 		body.Name, *body.Lat, *body.Lng, userID(r)).Scan(&s.ID, &s.Name, &s.Lat, &s.Lng)
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23514" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "site name must be 2 to 80 characters"})
+		writeError(w, http.StatusBadRequest, "site name must be 2 to 80 characters")
 		return
 	}
 	if err != nil {

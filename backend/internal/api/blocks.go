@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"slices"
@@ -19,17 +18,14 @@ func notBlocked(col string) string {
 		`) OR (b.blocker_id = ` + col + ` AND b.blocked_id = $1))`
 }
 
+// pathUser is the {id} path user, who must not be the caller.
 func pathUser(w http.ResponseWriter, r *http.Request) (int64, bool) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if ok && id == userID(r) {
+		writeError(w, http.StatusBadRequest, "that's you")
 		return 0, false
 	}
-	if id == userID(r) {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "that's you"})
-		return 0, false
-	}
-	return id, true
+	return id, ok
 }
 
 // PUT /users/{id}/block, DELETE /users/{id}/block — COM-05.
@@ -94,17 +90,16 @@ func (a *Server) reportUser(w http.ResponseWriter, r *http.Request) {
 		Reason string `json:"reason"`
 		Note   string `json:"note"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 4096, &body) {
 		return
 	}
 	body.Note = strings.TrimSpace(body.Note)
 	if !slices.Contains(userReportReasons, body.Reason) || len([]rune(body.Note)) > 500 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "reason must be spam, harassment, impersonation or other (note ≤ 500 chars)"})
+		writeError(w, http.StatusBadRequest, "reason must be spam, harassment, impersonation or other (note ≤ 500 chars)")
 		return
 	}
 	if a.rateLimited(r.Context(), "report-user:"+strconv.FormatInt(userID(r), 10), 20, time.Hour) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many reports, try again later"})
+		writeError(w, http.StatusTooManyRequests, "too many reports, try again later")
 		return
 	}
 	_, err := a.db.Exec(r.Context(), `INSERT INTO user_reports (reporter_id, reported_id, reason, note) VALUES ($1, $2, $3, $4)`,
@@ -112,7 +107,7 @@ func (a *Server) reportUser(w http.ResponseWriter, r *http.Request) {
 	var pgErr *pgconn.PgError
 	switch {
 	case errors.As(err, &pgErr) && pgErr.Code == "23505":
-		writeJSON(w, http.StatusConflict, map[string]string{"error": "you've already reported this"})
+		writeError(w, http.StatusConflict, "you've already reported this")
 	case errors.As(err, &pgErr) && pgErr.Code == "23503":
 		http.NotFound(w, r)
 	case err != nil:

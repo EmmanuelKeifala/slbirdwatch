@@ -20,7 +20,7 @@ type mapSquare struct {
 
 // GET /species/{id}/sightings-map (optional user, for blocks) — the squares, plus LIB-06 sightings per month (Jan..Dec).
 func (a *Server) speciesSightingsMap(w http.ResponseWriter, r *http.Request) {
-	id, ok := speciesPathID(w, r)
+	id, ok := pathID(w, r, "id")
 	if !ok {
 		return
 	}

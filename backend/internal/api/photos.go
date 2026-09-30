@@ -85,34 +85,38 @@ func (a *Server) withPhotos(ctx context.Context, obs []observation) error {
 
 // PUT / DELETE /observations/{id}/like — COM-02. Not on hidden sightings or across a block.
 func (a *Server) like(w http.ResponseWriter, r *http.Request) {
-	oid, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	oid, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
-	if r.Method == http.MethodDelete {
-		_, err = a.db.Exec(r.Context(), `DELETE FROM observation_likes WHERE observation_id = $1 AND user_id = $2`, oid, userID(r))
-	} else {
+	ctx, uid, liked := r.Context(), userID(r), r.Method != http.MethodDelete
+	var err error
+	if liked {
 		var tag pgconn.CommandTag
-		tag, err = a.db.Exec(r.Context(), `INSERT INTO observation_likes (observation_id, user_id)
+		tag, err = a.db.Exec(ctx, `INSERT INTO observation_likes (observation_id, user_id)
 			SELECT o.id, $1 FROM observations o WHERE o.id = $2 AND NOT o.hidden AND `+notBlocked("o.user_id")+`
-			ON CONFLICT DO NOTHING`, userID(r), oid)
+			ON CONFLICT DO NOTHING`, uid, oid)
 		if err == nil && tag.RowsAffected() == 0 {
+			// Nothing inserted: liked already, or the sighting is missing, hidden or behind a block.
 			var exists bool
-			a.db.QueryRow(r.Context(), `SELECT EXISTS (SELECT 1 FROM observation_likes WHERE observation_id = $1 AND user_id = $2)`, oid, userID(r)).Scan(&exists)
-			if !exists {
+			err = a.db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM observation_likes WHERE observation_id = $1 AND user_id = $2)`, oid, uid).Scan(&exists)
+			if err == nil && !exists {
 				http.NotFound(w, r)
 				return
 			}
 		}
+	} else {
+		_, err = a.db.Exec(ctx, `DELETE FROM observation_likes WHERE observation_id = $1 AND user_id = $2`, oid, uid)
+	}
+	var n int
+	if err == nil {
+		err = a.db.QueryRow(ctx, `SELECT count(*)::int FROM observation_likes WHERE observation_id = $1`, oid).Scan(&n)
 	}
 	if err != nil {
 		internalError(w, "like", err)
 		return
 	}
-	var n int
-	a.db.QueryRow(r.Context(), `SELECT count(*)::int FROM observation_likes WHERE observation_id = $1`, oid).Scan(&n)
-	writeJSON(w, http.StatusOK, map[string]any{"likes": n, "liked": r.Method != http.MethodDelete})
+	writeJSON(w, http.StatusOK, map[string]any{"likes": n, "liked": liked})
 }
 
 // ownsObservation reports whether the observation exists and belongs to the caller.
@@ -126,9 +130,8 @@ func (a *Server) ownsObservation(r *http.Request, id int64) (bool, error) {
 // POST /observations/{id}/photos — OBS-02. Multipart field "image".
 // Stores a ≤2048 px JPEG plus a ≤480 px thumbnail; both are re-encoded, so EXIF/GPS never leaves the server.
 func (a *Server) addPhoto(w http.ResponseWriter, r *http.Request) {
-	oid, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	oid, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	if ok, err := a.ownsObservation(r, oid); err != nil {
@@ -139,25 +142,25 @@ func (a *Server) addPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.rateLimited(r.Context(), "photo:"+strconv.FormatInt(userID(r), 10), 200, time.Hour) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many uploads, try again later"})
+		writeError(w, http.StatusTooManyRequests, "too many uploads, try again later")
 		return
 	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, storage.MaxUploadBytes+1<<20)
 	file, _, err := r.FormFile("image")
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": `send the image as multipart field "image"`})
+		writeError(w, http.StatusBadRequest, `send the image as multipart field "image"`)
 		return
 	}
 	defer file.Close()
 	licence := r.FormValue("licence") // empty = the uploader's default
 	if licence != "" && !slices.Contains(licences, licence) {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "licence must be cc0, cc-by, cc-by-nc or all-rights-reserved"})
+		writeError(w, http.StatusBadRequest, "licence must be cc0, cc-by, cc-by-nc or all-rights-reserved")
 		return
 	}
 	full, thumb, width, height, err := storage.ProcessImageWithThumb(file, 2048, 480)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	hash, err := dHash(thumb) // the hash is scale-invariant; the thumbnail decodes ~20x faster
@@ -196,7 +199,7 @@ func (a *Server) addPhoto(w http.ResponseWriter, r *http.Request) {
 		a.media.Remove(r.Context(), key)
 		a.media.Remove(r.Context(), thumbKey)
 		if errors.Is(err, pgx.ErrNoRows) {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "an observation can have at most 10 photos"})
+			writeError(w, http.StatusBadRequest, "an observation can have at most 10 photos")
 			return
 		}
 		internalError(w, "save photo", err)

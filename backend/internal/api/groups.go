@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"crypto/rand"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -57,9 +56,8 @@ func memberOf(ctx context.Context, q querier, groupID, userID int64) (bool, erro
 
 // groupFromPath loads a group the caller belongs to (404 otherwise, so outsiders can't tell it exists).
 func (a *Server) groupFromPath(w http.ResponseWriter, r *http.Request) (group, bool) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return group{}, false
 	}
 	rows, err := a.db.Query(r.Context(), `SELECT `+groupColumns+` FROM groups g
@@ -81,8 +79,7 @@ func (a *Server) groupFromPath(w http.ResponseWriter, r *http.Request) (group, b
 // POST /groups {name, description, kind}
 func (a *Server) createGroup(w http.ResponseWriter, r *http.Request) {
 	var body group
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 2048)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 2048, &body) {
 		return
 	}
 	body.Name, body.Description = strings.TrimSpace(body.Name), strings.TrimSpace(body.Description)
@@ -90,13 +87,16 @@ func (a *Server) createGroup(w http.ResponseWriter, r *http.Request) {
 		body.Kind = "club"
 	}
 	if n := len([]rune(body.Name)); n < 2 || n > 60 || len([]rune(body.Description)) > 300 || (body.Kind != "club" && body.Kind != "school" && body.Kind != "friends") {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "a name of 2–60 characters, description up to 300, kind club, school or friends"})
+		writeError(w, http.StatusBadRequest, "a name of 2–60 characters, description up to 300, kind club, school or friends")
 		return
 	}
 	var owned int
-	a.db.QueryRow(r.Context(), `SELECT count(*) FROM groups WHERE owner_id = $1`, userID(r)).Scan(&owned)
+	if err := a.db.QueryRow(r.Context(), `SELECT count(*) FROM groups WHERE owner_id = $1`, userID(r)).Scan(&owned); err != nil {
+		internalError(w, "count groups", err)
+		return
+	}
 	if owned >= 10 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "you can run up to 10 groups"})
+		writeError(w, http.StatusBadRequest, "you can run up to 10 groups")
 		return
 	}
 	var id int64
@@ -146,12 +146,11 @@ func (a *Server) joinGroup(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Code string `json:"code"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 256)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 256, &body) {
 		return
 	}
 	if a.rateLimited(r.Context(), "join:"+strconv.FormatInt(userID(r), 10), 20, time.Hour) { // no guessing codes
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many tries, wait a while"})
+		writeError(w, http.StatusTooManyRequests, "too many tries, wait a while")
 		return
 	}
 	var id int64
@@ -159,7 +158,7 @@ func (a *Server) joinGroup(w http.ResponseWriter, r *http.Request) {
 		SELECT id, $2 FROM groups WHERE join_code = upper(trim($1))
 		ON CONFLICT (group_id, user_id) DO UPDATE SET joined_at = group_members.joined_at RETURNING group_id`, body.Code, userID(r)).Scan(&id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "no group has that code"})
+		writeError(w, http.StatusNotFound, "no group has that code")
 		return
 	}
 	if err != nil {
@@ -189,11 +188,11 @@ func (a *Server) removeMember(w http.ResponseWriter, r *http.Request) {
 		who = n
 	}
 	if who != userID(r) && g.OwnerID != userID(r) {
-		writeJSON(w, http.StatusForbidden, map[string]string{"error": "only the group's owner can remove people"})
+		writeError(w, http.StatusForbidden, "only the group's owner can remove people")
 		return
 	}
 	if who == g.OwnerID {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "the owner can't leave; delete the group instead"})
+		writeError(w, http.StatusBadRequest, "the owner can't leave; delete the group instead")
 		return
 	}
 	if _, err := a.db.Exec(r.Context(), `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2`, g.ID, who); err != nil {
@@ -210,7 +209,7 @@ func (a *Server) ownGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if g.OwnerID != userID(r) {
-		writeJSON(w, http.StatusForbidden, map[string]string{"error": "only the group's owner can do that"})
+		writeError(w, http.StatusForbidden, "only the group's owner can do that")
 		return
 	}
 	if r.Method == http.MethodDelete {
@@ -375,7 +374,7 @@ func (a *Server) groupChallengeWrite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if g.OwnerID != userID(r) {
-		writeJSON(w, http.StatusForbidden, map[string]string{"error": "only the group's owner can set challenges"})
+		writeError(w, http.StatusForbidden, "only the group's owner can set challenges")
 		return
 	}
 	if r.Method == http.MethodDelete {
@@ -388,13 +387,12 @@ func (a *Server) groupChallengeWrite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var c groupChallenge
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&c); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 1024, &c) {
 		return
 	}
 	c.Title = strings.TrimSpace(c.Title)
 	if n := len([]rune(c.Title)); n < 2 || n > 60 || c.Goal < 1 || c.Goal > 1000 || !c.EndsAt.After(c.StartsAt) || c.EndsAt.Sub(c.StartsAt) > 366*24*time.Hour {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "a title of 2–60 characters, a goal of 1–1000 species, and an end after the start (at most a year)"})
+		writeError(w, http.StatusBadRequest, "a title of 2–60 characters, a goal of 1–1000 species, and an end after the start (at most a year)")
 		return
 	}
 	if err := a.db.QueryRow(r.Context(), `INSERT INTO group_challenges (group_id, title, goal, starts_at, ends_at) VALUES ($1, $2, $3, $4, $5) RETURNING id`,

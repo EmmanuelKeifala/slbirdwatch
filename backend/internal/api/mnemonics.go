@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 )
@@ -10,15 +9,14 @@ import (
 
 // PUT /species/{id}/mnemonic {text} (verifier+) — sets the phrase; empty text removes it.
 func (a *Server) putMnemonic(w http.ResponseWriter, r *http.Request) {
-	id, ok := speciesPathID(w, r)
+	id, ok := pathID(w, r, "id")
 	if !ok {
 		return
 	}
 	var body struct {
 		Text string `json:"text"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 2048)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 2048, &body) {
 		return
 	}
 	body.Text = strings.TrimSpace(body.Text)
@@ -26,7 +24,7 @@ func (a *Server) putMnemonic(w http.ResponseWriter, r *http.Request) {
 	if body.Text == "" {
 		_, err = a.db.Exec(r.Context(), `DELETE FROM species_mnemonics WHERE species_id = $1`, id)
 	} else if n := len([]rune(body.Text)); n < 3 || n > 140 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "a memory phrase is 3–140 characters"})
+		writeError(w, http.StatusBadRequest, "a memory phrase is 3–140 characters")
 		return
 	} else {
 		var tag interface{ RowsAffected() int64 }

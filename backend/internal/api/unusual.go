@@ -42,7 +42,7 @@ func unusualFor(ctx context.Context, q querier, speciesID int64, lat, lng float6
 
 // GET /species/{id}/likely?lat=&lng=&date= — the same check before posting, so the app can warn.
 func (a *Server) speciesLikely(w http.ResponseWriter, r *http.Request) {
-	id, ok := speciesPathID(w, r)
+	id, ok := pathID(w, r, "id")
 	if !ok {
 		return
 	}
@@ -51,7 +51,7 @@ func (a *Server) speciesLikely(w http.ResponseWriter, r *http.Request) {
 	lng, err2 := strconv.ParseFloat(q.Get("lng"), 64)
 	at, err3 := time.Parse(time.RFC3339, q.Get("date"))
 	if err1 != nil || err2 != nil || err3 != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "lat, lng and date (RFC 3339) are required"})
+		writeError(w, http.StatusBadRequest, "lat, lng and date (RFC 3339) are required")
 		return
 	}
 	u, err := unusualFor(r.Context(), a.db, id, lat, lng, at)

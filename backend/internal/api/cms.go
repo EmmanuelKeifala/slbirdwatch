@@ -1,12 +1,10 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"regexp"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 
@@ -32,12 +30,11 @@ func (a *Server) adminLessons(w http.ResponseWriter, r *http.Request) {
 func (a *Server) putLesson(w http.ResponseWriter, r *http.Request) {
 	slug := r.PathValue("slug")
 	var l lessonDef
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16384)).Decode(&l); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 16384, &l) {
 		return
 	}
 	l.Title, l.Blurb = strings.TrimSpace(l.Title), strings.TrimSpace(l.Blurb)
-	bad := func(msg string) { writeJSON(w, http.StatusBadRequest, map[string]string{"error": msg}) }
+	bad := func(msg string) { writeError(w, http.StatusBadRequest, msg) }
 	switch {
 	case !slugRe.MatchString(slug):
 		bad("the short name is 2–40 lowercase letters, digits or dashes")
@@ -126,14 +123,12 @@ func (a *Server) adminChallenges(w http.ResponseWriter, r *http.Request) {
 // PUT /admin/challenges/{id} {kind, param, title, description, goal} — this week's or a later one only, so XP
 // already earned never changes.
 func (a *Server) putChallenge(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	var c challenge
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&c); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 4096, &c) {
 		return
 	}
 	c.Title, c.Description = strings.TrimSpace(c.Title), strings.TrimSpace(c.Description)
@@ -141,14 +136,17 @@ func (a *Server) putChallenge(w http.ResponseWriter, r *http.Request) {
 		c.Param = ""
 	}
 	if len([]rune(c.Title)) < 2 || len([]rune(c.Title)) > 60 || len([]rune(c.Description)) > 200 || c.Goal < 1 || c.Goal > 50 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "title 2–60 characters, description up to 200, goal 1–50"})
+		writeError(w, http.StatusBadRequest, "title 2–60 characters, description up to 200, goal 1–50")
 		return
 	}
 	if c.Kind == "family_photo" {
 		var ok bool
-		a.db.QueryRow(r.Context(), `SELECT EXISTS (SELECT 1 FROM species WHERE family_sci = $1)`, c.Param).Scan(&ok)
+		if err := a.db.QueryRow(r.Context(), `SELECT EXISTS (SELECT 1 FROM species WHERE family_sci = $1)`, c.Param).Scan(&ok); err != nil {
+			internalError(w, "challenge family", err)
+			return
+		}
 		if !ok {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "pick a bird family"})
+			writeError(w, http.StatusBadRequest, "pick a bird family")
 			return
 		}
 	}
@@ -156,7 +154,7 @@ func (a *Server) putChallenge(w http.ResponseWriter, r *http.Request) {
 		WHERE id = $1 AND week >= $7`, id, c.Kind, c.Param, c.Title, c.Description, c.Goal, week(time.Now()))
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23514" { // kind check
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unknown challenge kind"})
+		writeError(w, http.StatusBadRequest, "unknown challenge kind")
 		return
 	}
 	if err != nil {
@@ -164,7 +162,7 @@ func (a *Server) putChallenge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if tag.RowsAffected() == 0 {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "no such challenge, or its week is over"})
+		writeError(w, http.StatusNotFound, "no such challenge, or its week is over")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

@@ -60,38 +60,42 @@ func (a *Server) photoDuplicate(ctx context.Context, hash, uploader, oid int64) 
 }
 
 // spamCheck runs before a new sighting is stored. A retry of one already created (same client_id) passes, so
-// the offline queue's retries are never mistaken for duplicates. Returns 0 when the sighting may be saved.
-func (a *Server) spamCheck(r *http.Request, in observationInput) (int, map[string]any) {
-	ctx, uid := r.Context(), userID(r)
+// the offline queue's retries are never mistaken for duplicates. A rejection is a status code and response body;
+// code 0 means the sighting may be saved.
+func (a *Server) spamCheck(ctx context.Context, uid int64, in observationInput) (code int, body map[string]any, err error) {
 	if in.ClientID != "" {
-		var exists bool
-		a.db.QueryRow(ctx, `SELECT true FROM observations WHERE user_id = $1 AND client_id = $2`, uid, in.ClientID).Scan(&exists)
-		if exists {
-			return 0, nil
+		var retry bool
+		if err := a.db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM observations WHERE user_id = $1 AND client_id = $2)`,
+			uid, in.ClientID).Scan(&retry); err != nil || retry {
+			return 0, nil, err
 		}
 	}
 	if a.rateLimited(ctx, "obs:"+strconv.FormatInt(uid, 10), 300, time.Hour) {
-		return http.StatusTooManyRequests, map[string]any{"error": "too many sightings this hour, they'll upload a little later"}
+		return http.StatusTooManyRequests, map[string]any{"error": "too many sightings this hour, they'll upload a little later"}, nil
 	}
-	var dup int64
-	err := pgx.ErrNoRows // two unknown birds at the same spot can be different birds: only known species count
-	if in.SpeciesID != nil {
-		err = a.db.QueryRow(ctx, `
-		SELECT id FROM observations
-		WHERE user_id = $1 AND species_id = $2 AND abs(extract(epoch FROM observed_at - $3)) <= 60
-		  AND ST_DWithin(location, ST_SetSRID(ST_MakePoint($5, $4), 4326)::geography, 30)
-		LIMIT 1`, uid, in.SpeciesID, in.ObservedAt, *in.Lat, *in.Lng).Scan(&dup)
-	}
-	if err == nil {
-		return http.StatusConflict, map[string]any{"error": "this looks like a sighting you already saved (same bird, place and minute)",
-			"code": "duplicate", "observation_id": dup}
+	if in.SpeciesID != nil { // two unknown birds at the same spot can be different birds: only known species count
+		var dup int64
+		err := a.db.QueryRow(ctx, `
+			SELECT id FROM observations
+			WHERE user_id = $1 AND species_id = $2 AND abs(extract(epoch FROM observed_at - $3)) <= 60
+			  AND ST_DWithin(location, ST_SetSRID(ST_MakePoint($5, $4), 4326)::geography, 30)
+			LIMIT 1`, uid, in.SpeciesID, in.ObservedAt, *in.Lat, *in.Lng).Scan(&dup)
+		if err == nil {
+			return http.StatusConflict, map[string]any{"error": "this looks like a sighting you already saved (same bird, place and minute)",
+				"code": "duplicate", "observation_id": dup}, nil
+		}
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return 0, nil, err
+		}
 	}
 	var burst int
-	a.db.QueryRow(ctx, `SELECT count(*) FROM observations WHERE user_id = $1 AND observed_at BETWEEN $2::timestamptz - interval '5 minutes'
-		AND $2::timestamptz + interval '5 minutes'`, uid, in.ObservedAt).Scan(&burst)
+	if err := a.db.QueryRow(ctx, `SELECT count(*) FROM observations WHERE user_id = $1 AND observed_at BETWEEN $2::timestamptz - interval '5 minutes'
+		AND $2::timestamptz + interval '5 minutes'`, uid, in.ObservedAt).Scan(&burst); err != nil {
+		return 0, nil, err
+	}
 	if burst >= 60 {
 		return http.StatusBadRequest, map[string]any{"error": "that's a lot of sightings for the same few minutes; for a flock, use the count on one sighting",
-			"code": "burst"}
+			"code": "burst"}, nil
 	}
-	return 0, nil
+	return 0, nil, nil
 }

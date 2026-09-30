@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -145,8 +144,7 @@ type credentials struct {
 
 func readCredentials(w http.ResponseWriter, r *http.Request) (credentials, bool) {
 	var c credentials
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&c); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 4096, &c) {
 		return c, false
 	}
 	c.Email = strings.ToLower(strings.TrimSpace(c.Email))
@@ -161,7 +159,7 @@ func validEmail(s string) bool {
 
 func (a *Server) signup(w http.ResponseWriter, r *http.Request) {
 	if a.rateLimited(r.Context(), "signup:"+clientIP(r), 10, time.Hour) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many sign-ups, try again later"})
+		writeError(w, http.StatusTooManyRequests, "too many sign-ups, try again later")
 		return
 	}
 	c, ok := readCredentials(w, r)
@@ -170,13 +168,13 @@ func (a *Server) signup(w http.ResponseWriter, r *http.Request) {
 	}
 	switch {
 	case !validEmail(c.Email):
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "enter a valid email address"})
+		writeError(w, http.StatusBadRequest, "enter a valid email address")
 		return
 	case len(c.Password) < 8 || len(c.Password) > 72: // bcrypt ignores bytes past 72
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "password must be 8 to 72 characters"})
+		writeError(w, http.StatusBadRequest, "password must be 8 to 72 characters")
 		return
 	case c.DisplayName == "" || len([]rune(c.DisplayName)) > 50:
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "display name must be 1 to 50 characters"})
+		writeError(w, http.StatusBadRequest, "display name must be 1 to 50 characters")
 		return
 	}
 
@@ -190,7 +188,7 @@ func (a *Server) signup(w http.ResponseWriter, r *http.Request) {
 		c.Email, string(hash), c.DisplayName))
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		writeJSON(w, http.StatusConflict, map[string]string{"error": "an account with this email already exists"})
+		writeError(w, http.StatusConflict, "an account with this email already exists")
 		return
 	}
 	if err != nil {
@@ -207,7 +205,7 @@ func (a *Server) login(w http.ResponseWriter, r *http.Request) {
 	}
 	if a.rateLimited(r.Context(), "login:"+clientIP(r), 30, 15*time.Minute) ||
 		a.rateLimited(r.Context(), "login:"+c.Email, 10, 15*time.Minute) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many attempts, try again in 15 minutes"})
+		writeError(w, http.StatusTooManyRequests, "too many attempts, try again in 15 minutes")
 		return
 	}
 
@@ -226,7 +224,7 @@ func (a *Server) login(w http.ResponseWriter, r *http.Request) {
 		stored = []byte(*hash)
 	}
 	if bcrypt.CompareHashAndPassword(stored, []byte(c.Password)) != nil || err != nil || hash == nil {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "wrong email or password"})
+		writeError(w, http.StatusUnauthorized, "wrong email or password")
 		return
 	}
 	// ADM-01: only after the password checks out, so this doesn't reveal which emails exist.
@@ -269,12 +267,12 @@ func (a *Server) requireUser(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t := bearer(r)
 		if t == "" {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "sign in required"})
+			writeError(w, http.StatusUnauthorized, "sign in required")
 			return
 		}
 		v, err := a.cache.GetEx(r.Context(), sessionKey(t), sessionTTL).Result()
 		if errors.Is(err, redis.Nil) {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "session expired, sign in again"})
+			writeError(w, http.StatusUnauthorized, "session expired, sign in again")
 			return
 		}
 		if err != nil {
@@ -353,6 +351,19 @@ func (a *Server) optionalUser(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// roleOf is the person's role, or "" for guests (id 0) and deleted accounts.
+func (a *Server) roleOf(ctx context.Context, id int64) (string, error) {
+	if id == 0 {
+		return "", nil
+	}
+	var role string
+	err := a.db.QueryRow(ctx, `SELECT role FROM users WHERE id = $1`, id).Scan(&role)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", nil
+	}
+	return role, err
+}
+
 // Roles, lowest to highest; must match the user_role enum order in 004_roles.sql.
 // ponytail: linear hierarchy (a moderator can also verify); split into permission sets if roles diverge.
 var roles = []string{"member", "trusted", "verifier", "moderator", "admin"}
@@ -371,14 +382,14 @@ func (a *Server) requireRole(min string, next http.HandlerFunc) http.HandlerFunc
 		var role string
 		if err := a.db.QueryRow(r.Context(), `SELECT role FROM users WHERE id = $1`, userID(r)).Scan(&role); err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "account no longer exists"})
+				writeError(w, http.StatusUnauthorized, "account no longer exists")
 				return
 			}
 			internalError(w, "role lookup", err)
 			return
 		}
 		if !roleAtLeast(role, min) {
-			writeJSON(w, http.StatusForbidden, map[string]string{"error": "you don't have permission to do that"})
+			writeError(w, http.StatusForbidden, "you don't have permission to do that")
 			return
 		}
 		next(w, r)
@@ -388,7 +399,7 @@ func (a *Server) requireRole(min string, next http.HandlerFunc) http.HandlerFunc
 func (a *Server) me(w http.ResponseWriter, r *http.Request) {
 	u, err := a.loadUser(r.Context(), userID(r))
 	if errors.Is(err, pgx.ErrNoRows) {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "account no longer exists"})
+		writeError(w, http.StatusUnauthorized, "account no longer exists")
 		return
 	}
 	if err != nil {
@@ -400,9 +411,4 @@ func (a *Server) me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, u)
-}
-
-func internalError(w http.ResponseWriter, what string, err error) {
-	log.Printf("%s: %v", what, err)
-	writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
 }

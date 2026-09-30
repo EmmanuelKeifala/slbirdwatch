@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,8 +17,7 @@ func (a *Server) setReference(w http.ResponseWriter, r *http.Request) {
 		MediaRef  string `json:"media_ref"`
 		Reference bool   `json:"reference"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 1024, &body) {
 		return
 	}
 	kind, idStr, _ := strings.Cut(body.MediaRef, ":")
@@ -34,7 +32,7 @@ func (a *Server) setReference(w http.ResponseWriter, r *http.Request) {
 		sql = `UPDATE species_gallery SET reference = $2 WHERE id = $1`
 	}
 	if sql == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": `media_ref must be "photo:<id>" or "gallery:<id>"`})
+		writeError(w, http.StatusBadRequest, `media_ref must be "photo:<id>" or "gallery:<id>"`)
 		return
 	}
 	tag, err := a.db.Exec(r.Context(), sql, id, body.Reference)
@@ -43,7 +41,7 @@ func (a *Server) setReference(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if tag.RowsAffected() == 0 {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "no such photo, or its sighting isn't verified yet"})
+		writeError(w, http.StatusNotFound, "no such photo, or its sighting isn't verified yet")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

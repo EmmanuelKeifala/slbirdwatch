@@ -74,7 +74,7 @@ func (a *Server) addQuizStats(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&d); err != nil ||
 		d.Quizzes < 0 || d.Answered < 0 || d.Correct < 0 || d.Correct > d.Answered || d.BestStreak < 0 || d.BestStreak > d.Answered ||
 		d.Quizzes > 10000 || d.Answered > 200000 || len(d.Missed) > 1000 || len(d.BySpecies) > 3000 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid quiz stats"})
+		writeError(w, http.StatusBadRequest, "invalid quiz stats")
 		return
 	}
 	var out quizStats

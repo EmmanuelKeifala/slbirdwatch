@@ -77,7 +77,7 @@ func (a *Server) areaChecklist(w http.ResponseWriter, r *http.Request) {
 	lat, err1 := strconv.ParseFloat(qs.Get("lat"), 64)
 	lng, err2 := strconv.ParseFloat(qs.Get("lng"), 64)
 	if err1 != nil || err2 != nil || lat < -90 || lat > 90 || lng < -180 || lng > 180 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "lat and lng are required"})
+		writeError(w, http.StatusBadRequest, "lat and lng are required")
 		return
 	}
 	km, err := strconv.Atoi(qs.Get("km"))

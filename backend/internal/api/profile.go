@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"slices"
@@ -34,8 +33,7 @@ func (a *Server) updateProfile(w http.ResponseWriter, r *http.Request) {
 		NotifyReminders *bool   `json:"notify_reminders"`
 		HideFromBoards  *bool   `json:"hide_from_leaderboards"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 8192, &body) {
 		return
 	}
 	trim := func(p *string) {
@@ -51,19 +49,19 @@ func (a *Server) updateProfile(w http.ResponseWriter, r *http.Request) {
 	runes := func(p *string) int { return len([]rune(*p)) }
 	switch {
 	case body.DisplayName != nil && (*body.DisplayName == "" || runes(body.DisplayName) > 50):
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "display name must be 1 to 50 characters"})
+		writeError(w, http.StatusBadRequest, "display name must be 1 to 50 characters")
 		return
 	case body.HomeArea != nil && runes(body.HomeArea) > 80:
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "home area must be at most 80 characters"})
+		writeError(w, http.StatusBadRequest, "home area must be at most 80 characters")
 		return
 	case body.Bio != nil && runes(body.Bio) > 500:
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bio must be at most 500 characters"})
+		writeError(w, http.StatusBadRequest, "bio must be at most 500 characters")
 		return
 	case body.ExperienceLevel != nil && *body.ExperienceLevel != "" && !slices.Contains(experienceLevels, *body.ExperienceLevel):
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "experience level must be beginner, intermediate, advanced or expert"})
+		writeError(w, http.StatusBadRequest, "experience level must be beginner, intermediate, advanced or expert")
 		return
 	case body.DefaultLicence != nil && !slices.Contains(licences, *body.DefaultLicence):
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "licence must be cc0, cc-by, cc-by-nc or all-rights-reserved"})
+		writeError(w, http.StatusBadRequest, "licence must be cc0, cc-by, cc-by-nc or all-rights-reserved")
 		return
 	}
 
@@ -88,7 +86,7 @@ func (a *Server) updateProfile(w http.ResponseWriter, r *http.Request) {
 		userID(r), body.DisplayName, body.HomeArea, body.ExperienceLevel, body.Bio, body.DefaultLicence,
 		body.HideLocations, body.PrivateProfile, body.NotifyIDs, body.NotifyStatus, body.NotifyComments, body.NotifyReminders, body.HideFromBoards))
 	if errors.Is(err, pgx.ErrNoRows) {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "account no longer exists"})
+		writeError(w, http.StatusUnauthorized, "account no longer exists")
 		return
 	}
 	if err != nil {
@@ -102,19 +100,19 @@ func (a *Server) updateProfile(w http.ResponseWriter, r *http.Request) {
 func (a *Server) putAvatar(w http.ResponseWriter, r *http.Request) {
 	id := userID(r)
 	if a.rateLimited(r.Context(), "avatar:"+strconv.FormatInt(id, 10), 20, time.Hour) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many uploads, try again later"})
+		writeError(w, http.StatusTooManyRequests, "too many uploads, try again later")
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, storage.MaxUploadBytes+1<<20)
 	file, _, err := r.FormFile("image")
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": `send the image as multipart field "image"`})
+		writeError(w, http.StatusBadRequest, `send the image as multipart field "image"`)
 		return
 	}
 	defer file.Close()
 	jpg, _, _, err := storage.ProcessImage(file, 512, 0)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -188,9 +186,8 @@ func (a *Server) acceptGuidelines(w http.ResponseWriter, r *http.Request) {
 
 // GET /users/{id} — public, no email. A private profile (ACC-08) shows only name and avatar to others.
 func (a *Server) getProfile(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	u, err := a.loadUser(r.Context(), id)

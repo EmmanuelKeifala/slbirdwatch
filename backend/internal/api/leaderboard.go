@@ -29,7 +29,7 @@ func (a *Server) leaderboard(w http.ResponseWriter, r *http.Request) {
 		y, err1 := strconv.ParseFloat(q.Get("lat"), 64)
 		x, err2 := strconv.ParseFloat(q.Get("lng"), 64)
 		if err1 != nil || err2 != nil || y < -90 || y > 90 || x < -180 || x > 180 {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "near needs lat and lng"})
+			writeError(w, http.StatusBadRequest, "near needs lat and lng")
 			return
 		}
 		lat, lng = &y, &x

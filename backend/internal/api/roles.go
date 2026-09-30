@@ -2,9 +2,9 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -47,24 +47,23 @@ func (a *Server) searchUsers(w http.ResponseWriter, r *http.Request) {
 
 // PUT /admin/users/{id}/role {role}
 func (a *Server) setUserRole(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	var body struct {
 		Role string `json:"role"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body); err != nil || !slices.Contains(roles, body.Role) {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "role must be one of " + strings.Join(roles, ", ")})
+		writeError(w, http.StatusBadRequest, "role must be one of "+strings.Join(roles, ", "))
 		return
 	}
 	if id == userID(r) {
-		writeJSON(w, http.StatusForbidden, map[string]string{"error": "you can't change your own role"})
+		writeError(w, http.StatusForbidden, "you can't change your own role")
 		return
 	}
 	var before string
-	err = pgx.BeginFunc(r.Context(), a.db, func(tx pgx.Tx) error {
+	err := pgx.BeginFunc(r.Context(), a.db, func(tx pgx.Tx) error {
 		if err := tx.QueryRow(r.Context(), `SELECT role::text FROM users WHERE id = $1 FOR UPDATE`, id).Scan(&before); err != nil {
 			return err
 		}
@@ -75,7 +74,7 @@ func (a *Server) setUserRole(w http.ResponseWriter, r *http.Request) {
 			VALUES ($1, 'user', $2, 'role', $3)`, userID(r), id, before+" → "+body.Role)
 		return err
 	})
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		http.NotFound(w, r)
 		return
 	}

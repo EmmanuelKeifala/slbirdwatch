@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
@@ -127,14 +126,13 @@ func (a *Server) getEvent(w http.ResponseWriter, r *http.Request) {
 // PUT /admin/events/{slug} {title, description, starts_at, ends_at} (admin) — create or replace.
 func (a *Server) putEvent(w http.ResponseWriter, r *http.Request) {
 	var e event
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&e); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 4096, &e) {
 		return
 	}
 	e.Title, e.Description = strings.TrimSpace(e.Title), strings.TrimSpace(e.Description)
 	if !slugRe.MatchString(r.PathValue("slug")) || len([]rune(e.Title)) < 2 || len([]rune(e.Title)) > 80 ||
 		len([]rune(e.Description)) > 500 || !e.EndsAt.After(e.StartsAt) || e.EndsAt.Sub(e.StartsAt) > 120*24*time.Hour {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "short name, title 2–80, description up to 500, and an end after the start (at most 120 days)"})
+		writeError(w, http.StatusBadRequest, "short name, title 2–80, description up to 500, and an end after the start (at most 120 days)")
 		return
 	}
 	if _, err := a.db.Exec(r.Context(), `INSERT INTO events (slug, title, description, starts_at, ends_at) VALUES ($1, $2, $3, $4, $5)

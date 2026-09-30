@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -19,20 +18,19 @@ func (a *Server) deleteAccount(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 		Confirm  string `json:"confirm"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 4096, &body) {
 		return
 	}
 	id := userID(r)
 	if a.rateLimited(r.Context(), "delete:"+strconv.FormatInt(id, 10), 5, 15*time.Minute) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many attempts, try again in 15 minutes"})
+		writeError(w, http.StatusTooManyRequests, "too many attempts, try again in 15 minutes")
 		return
 	}
 
 	var hash, avatarKey *string
 	err := a.db.QueryRow(r.Context(), `SELECT password_hash, avatar_key FROM users WHERE id = $1`, id).Scan(&hash, &avatarKey)
 	if errors.Is(err, pgx.ErrNoRows) {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "account no longer exists"})
+		writeError(w, http.StatusUnauthorized, "account no longer exists")
 		return
 	}
 	if err != nil {
@@ -40,11 +38,11 @@ func (a *Server) deleteAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if hash != nil && bcrypt.CompareHashAndPassword([]byte(*hash), []byte(body.Password)) != nil {
-		writeJSON(w, http.StatusForbidden, map[string]string{"error": "wrong password"})
+		writeError(w, http.StatusForbidden, "wrong password")
 		return
 	}
 	if hash == nil && body.Confirm != "DELETE" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": `send "confirm": "DELETE" to delete this account`})
+		writeError(w, http.StatusBadRequest, `send "confirm": "DELETE" to delete this account`)
 		return
 	}
 
@@ -97,7 +95,7 @@ func (a *Server) deleteAccount(w http.ResponseWriter, r *http.Request) {
 func (a *Server) exportAccount(w http.ResponseWriter, r *http.Request) {
 	u, err := a.loadUser(r.Context(), userID(r))
 	if errors.Is(err, pgx.ErrNoRows) {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "account no longer exists"})
+		writeError(w, http.StatusUnauthorized, "account no longer exists")
 		return
 	}
 	if err != nil {

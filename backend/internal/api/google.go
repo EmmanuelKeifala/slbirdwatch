@@ -132,30 +132,30 @@ func verifyGoogleIDToken(ctx context.Context, token string, audiences []string) 
 // otherwise creates one. 201 when created, 200 otherwise.
 func (a *Server) googleSignIn(w http.ResponseWriter, r *http.Request) {
 	if a.rateLimited(r.Context(), "google:"+clientIP(r), 30, 15*time.Minute) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many attempts, try again in 15 minutes"})
+		writeError(w, http.StatusTooManyRequests, "too many attempts, try again in 15 minutes")
 		return
 	}
 	var body struct {
 		IDToken string `json:"id_token"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192)).Decode(&body); err != nil || body.IDToken == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id_token is required"})
+		writeError(w, http.StatusBadRequest, "id_token is required")
 		return
 	}
 	ids := googleClientIDs()
 	if len(ids) == 0 {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "Google sign-in isn't set up on this server"})
+		writeError(w, http.StatusServiceUnavailable, "Google sign-in isn't set up on this server")
 		return
 	}
 	c, err := verifyGoogleIDToken(r.Context(), body.IDToken, ids)
 	if err != nil {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "Google sign-in failed: " + err.Error()})
+		writeError(w, http.StatusUnauthorized, "Google sign-in failed: "+err.Error())
 		return
 	}
 	verified := c.EmailVerified == true || c.EmailVerified == "true"
 	email := strings.ToLower(strings.TrimSpace(c.Email))
 	if !verified || !validEmail(email) {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "your Google account has no verified email"})
+		writeError(w, http.StatusBadRequest, "your Google account has no verified email")
 		return
 	}
 	name := strings.TrimSpace(c.Name)
@@ -183,7 +183,7 @@ func (a *Server) googleSignIn(w http.ResponseWriter, r *http.Request) {
 	}
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		writeJSON(w, http.StatusConflict, map[string]string{"error": "an account with this email is linked to a different Google account"})
+		writeError(w, http.StatusConflict, "an account with this email is linked to a different Google account")
 		return
 	}
 	if err != nil {

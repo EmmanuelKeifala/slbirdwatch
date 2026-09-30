@@ -2,9 +2,9 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
+	"slices"
 	"strconv"
 	"time"
 
@@ -152,26 +152,20 @@ type modAction struct {
 
 func readModAction(w http.ResponseWriter, r *http.Request, allowed ...string) (int64, modAction, bool) {
 	var m modAction
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return 0, m, false
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&m); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 4096, &m) {
 		return 0, m, false
-	}
-	ok := false
-	for _, a := range allowed {
-		ok = ok || m.Action == a
 	}
 	switch {
-	case !ok:
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unknown action " + m.Action})
+	case !slices.Contains(allowed, m.Action):
+		writeError(w, http.StatusBadRequest, "unknown action "+m.Action)
 	case len(m.Note) > 1000:
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "note is too long (1000 characters max)"})
+		writeError(w, http.StatusBadRequest, "note is too long (1000 characters max)")
 	case m.Action == "suspend" && (m.Days < 1 || m.Days > 365):
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "days must be 1–365"})
+		writeError(w, http.StatusBadRequest, "days must be 1–365")
 	default:
 		return id, m, true
 	}
@@ -247,7 +241,7 @@ func (a *Server) moderateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if roleAtLeast(theirs, mine) {
-		writeJSON(w, http.StatusForbidden, map[string]string{"error": "you can only moderate people with a lower role"})
+		writeError(w, http.StatusForbidden, "you can only moderate people with a lower role")
 		return
 	}
 	err = pgx.BeginFunc(r.Context(), a.db, func(tx pgx.Tx) error {

@@ -47,11 +47,11 @@ func (a *Server) createDuel(w http.ResponseWriter, r *http.Request) {
 	case "sound":
 		pool = soundPool
 	default:
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "kind is picture or sound"})
+		writeError(w, http.StatusBadRequest, "kind is picture or sound")
 		return
 	}
 	if a.rateLimited(r.Context(), "duel:"+strconv.FormatInt(userID(r), 10), 20, time.Hour) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many challenges, try again later"})
+		writeError(w, http.StatusTooManyRequests, "too many challenges, try again later")
 		return
 	}
 	q := r.URL.Query() // a plain mixed quiz of 10 for the creator (their weak birds first, QZ-14)
@@ -63,7 +63,7 @@ func (a *Server) createDuel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(questions) < 4 {
-		writeJSON(w, http.StatusConflict, map[string]string{"error": "not enough quiz media yet"})
+		writeError(w, http.StatusConflict, "not enough quiz media yet")
 		return
 	}
 	raw, _ := json.Marshal(questions)
@@ -94,7 +94,7 @@ func (a *Server) getDuel(w http.ResponseWriter, r *http.Request) {
 		FROM duels d JOIN users u ON u.id = d.creator_id WHERE d.code = upper($1)`, strings.TrimSpace(r.PathValue("code"))).
 		Scan(&id, &d.Code, &d.Kind, &raw, &d.ExpiresAt, &d.Creator.ID, &d.Creator.DisplayName, &avatar)
 	if errors.Is(err, pgx.ErrNoRows) {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "no challenge has that code"})
+		writeError(w, http.StatusNotFound, "no challenge has that code")
 		return
 	}
 	if err != nil {
@@ -142,7 +142,7 @@ func (a *Server) scoreDuel(w http.ResponseWriter, r *http.Request) {
 		TimeMS int     `json:"time_ms"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&body); err != nil || body.TimeMS < 0 || body.TimeMS > 3600_000 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid score"})
+		writeError(w, http.StatusBadRequest, "invalid score")
 		return
 	}
 	var id int64
@@ -150,7 +150,7 @@ func (a *Server) scoreDuel(w http.ResponseWriter, r *http.Request) {
 	var expires time.Time
 	err := a.db.QueryRow(r.Context(), `SELECT id, questions, expires_at FROM duels WHERE code = upper($1)`, r.PathValue("code")).Scan(&id, &raw, &expires)
 	if errors.Is(err, pgx.ErrNoRows) {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "no challenge has that code"})
+		writeError(w, http.StatusNotFound, "no challenge has that code")
 		return
 	}
 	if err != nil {
@@ -158,13 +158,13 @@ func (a *Server) scoreDuel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if time.Now().After(expires) {
-		writeJSON(w, http.StatusGone, map[string]string{"error": "this challenge has closed"})
+		writeError(w, http.StatusGone, "this challenge has closed")
 		return
 	}
 	var questions []quizQuestion
 	json.Unmarshal(raw, &questions)
 	if len(body.Picks) != len(questions) {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "one pick per question"})
+		writeError(w, http.StatusBadRequest, "one pick per question")
 		return
 	}
 	right := 0
@@ -180,7 +180,7 @@ func (a *Server) scoreDuel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if tag.RowsAffected() == 0 {
-		writeJSON(w, http.StatusConflict, map[string]string{"error": "you've already played this one"})
+		writeError(w, http.StatusConflict, "you've already played this one")
 		return
 	}
 	a.getDuel(w, r)

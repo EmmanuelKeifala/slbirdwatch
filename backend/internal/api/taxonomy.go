@@ -3,14 +3,12 @@ package api
 import (
 	"context"
 	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -35,29 +33,19 @@ func (a *Server) localNames(ctx context.Context, speciesID int64) ([]localName, 
 	return pgx.CollectRows(rows, pgx.RowToStructByPos[localName])
 }
 
-func speciesPathID(w http.ResponseWriter, r *http.Request) (int64, bool) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
-		return 0, false
-	}
-	return id, true
-}
-
 // POST /admin/species/{id}/names {name, language}
 func (a *Server) addLocalName(w http.ResponseWriter, r *http.Request) {
-	id, ok := speciesPathID(w, r)
+	id, ok := pathID(w, r, "id")
 	if !ok {
 		return
 	}
 	var n localName
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 2048)).Decode(&n); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 2048, &n) {
 		return
 	}
 	n.Name, n.Language = strings.TrimSpace(n.Name), strings.ToLower(strings.TrimSpace(n.Language))
 	if n.Name == "" || len(n.Name) > 100 || len(n.Language) > 10 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "name must be 1–100 characters, language up to 10"})
+		writeError(w, http.StatusBadRequest, "name must be 1–100 characters, language up to 10")
 		return
 	}
 	_, err := a.db.Exec(r.Context(), `INSERT INTO species_local_names (species_id, name, language) VALUES ($1, $2, $3)
@@ -76,7 +64,7 @@ func (a *Server) addLocalName(w http.ResponseWriter, r *http.Request) {
 
 // DELETE /admin/species/{id}/names?name=
 func (a *Server) deleteLocalName(w http.ResponseWriter, r *http.Request) {
-	id, ok := speciesPathID(w, r)
+	id, ok := pathID(w, r, "id")
 	if !ok {
 		return
 	}
@@ -104,19 +92,18 @@ type taxonomyChange struct {
 
 func readTaxonomyChange(w http.ResponseWriter, r *http.Request, minInto int) (taxonomyChange, bool) {
 	var c taxonomyChange
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&c); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 4096, &c) {
 		return c, false
 	}
 	slices.Sort(c.Into)
 	c.Into = slices.Compact(c.Into)
 	switch {
 	case len(c.Into) < minInto || len(c.Into) > 10:
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": fmt.Sprintf("into needs %d–10 species", minInto)})
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("into needs %d–10 species", minInto))
 	case slices.Contains(c.Into, c.From):
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "a species can't be merged or split into itself"})
+		writeError(w, http.StatusBadRequest, "a species can't be merged or split into itself")
 	case len(c.Note) > 1000:
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "note is too long"})
+		writeError(w, http.StatusBadRequest, "note is too long")
 	default:
 		return c, true
 	}
@@ -130,7 +117,7 @@ func activeSpecies(ctx context.Context, tx pgx.Tx, w http.ResponseWriter, ids ..
 		return false, err
 	}
 	if n != len(ids) {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unknown or already merged species"})
+		writeError(w, http.StatusBadRequest, "unknown or already merged species")
 		return false, nil
 	}
 	return true, nil
@@ -143,7 +130,7 @@ func (a *Server) mergeSpecies(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(c.Into) != 1 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "merge into exactly one species"})
+		writeError(w, http.StatusBadRequest, "merge into exactly one species")
 		return
 	}
 	into, wrote := c.Into[0], false
@@ -237,7 +224,7 @@ func importLocalNames(ctx context.Context, db *pgxpool.Pool, path string) (added
 	}
 	for {
 		rec, err := rd.Read()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			return added, unknown, nil
 		}
 		if err != nil {

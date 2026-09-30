@@ -100,12 +100,12 @@ func clip(ctx context.Context, in, out string, start, dur float64) error {
 // POST /audio/preview — duration + spectrogram of an unsaved recording, for the trim UI. Nothing is stored.
 func (a *Server) previewAudio(w http.ResponseWriter, r *http.Request) {
 	if a.rateLimited(r.Context(), "preview:"+strconv.FormatInt(userID(r), 10), 120, time.Hour) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many previews, try again later"})
+		writeError(w, http.StatusTooManyRequests, "too many previews, try again later")
 		return
 	}
 	path, cleanup, err := saveUpload(w, r)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	defer cleanup()
@@ -114,7 +114,7 @@ func (a *Server) previewAudio(w http.ResponseWriter, r *http.Request) {
 		err = fmt.Errorf("recordings can be at most %d minutes", maxRawSeconds/60)
 	}
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	png := filepath.Join(filepath.Dir(path), "spec.png")
@@ -145,9 +145,8 @@ type sound struct {
 
 // POST /observations/{id}/sounds — multipart "audio" + optional trim_start, trim_end (seconds) and licence.
 func (a *Server) addSound(w http.ResponseWriter, r *http.Request) {
-	oid, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	oid, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	if ok, err := a.ownsObservation(r, oid); err != nil {
@@ -158,11 +157,11 @@ func (a *Server) addSound(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.rateLimited(r.Context(), "sound:"+strconv.FormatInt(userID(r), 10), 60, time.Hour) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many uploads, try again later"})
+		writeError(w, http.StatusTooManyRequests, "too many uploads, try again later")
 		return
 	}
 	path, cleanup, err := saveUpload(w, r)
-	bad := func(msg string) { writeJSON(w, http.StatusBadRequest, map[string]string{"error": msg}) }
+	bad := func(msg string) { writeError(w, http.StatusBadRequest, msg) }
 	if err != nil {
 		bad(err.Error())
 		return

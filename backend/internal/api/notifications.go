@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -39,7 +38,7 @@ type notification struct {
 
 // GET /me/notifications?offset= — newest first, 30 a page, with the unread count.
 func (a *Server) myNotifications(w http.ResponseWriter, r *http.Request) {
-	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+	offset := offsetParam(r)
 	rows, err := a.db.Query(r.Context(), `
 		SELECT n.id, n.kind, n.observation_id, u.id, u.display_name, u.avatar_key, s.id, s.english_name, s.scientific_name,
 		       n.status, n.read_at IS NOT NULL, n.created_at
@@ -85,8 +84,7 @@ func (a *Server) readNotifications(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		IDs []int64 `json:"ids"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16384)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 16384, &body) {
 		return
 	}
 	if _, err := a.db.Exec(r.Context(), `UPDATE notifications SET read_at = now()

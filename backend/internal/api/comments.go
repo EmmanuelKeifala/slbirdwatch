@@ -27,18 +27,17 @@ type comment struct {
 // GET /observations/{id}/comments — threads, oldest first. Hidden comments are left out (moderators see them,
 // marked); comments between people who blocked each other are left out; deleted ones keep their place.
 func (a *Server) listComments(w http.ResponseWriter, r *http.Request) {
-	oid, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	oid, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	viewer := viewerID(r)
-	var mod bool
-	if viewer != 0 {
-		var role string
-		a.db.QueryRow(r.Context(), `SELECT role FROM users WHERE id = $1`, viewer).Scan(&role)
-		mod = roleAtLeast(role, "moderator")
+	role, err := a.roleOf(r.Context(), viewer)
+	if err != nil {
+		internalError(w, "comments role", err)
+		return
 	}
+	mod := roleAtLeast(role, "moderator")
 	rows, err := a.db.Query(r.Context(), `
 		SELECT c.id, c.parent_id, u.id, u.display_name, u.avatar_key, c.body, c.deleted, c.hidden, c.created_at
 		FROM comments c JOIN users u ON u.id = c.user_id
@@ -83,30 +82,28 @@ func (a *Server) listComments(w http.ResponseWriter, r *http.Request) {
 
 // POST /observations/{id}/comments {body, parent_id?}
 func (a *Server) addComment(w http.ResponseWriter, r *http.Request) {
-	oid, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	oid, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	var body struct {
 		Body     string `json:"body"`
 		ParentID *int64 `json:"parent_id"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 8192, &body) {
 		return
 	}
 	body.Body = strings.TrimSpace(body.Body)
 	if body.Body == "" || len([]rune(body.Body)) > 1000 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "a comment must be 1 to 1000 characters"})
+		writeError(w, http.StatusBadRequest, "a comment must be 1 to 1000 characters")
 		return
 	}
 	if a.rateLimited(r.Context(), "comment:"+strconv.FormatInt(userID(r), 10), 60, time.Hour) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many comments, try again later"})
+		writeError(w, http.StatusTooManyRequests, "too many comments, try again later")
 		return
 	}
 	var owner int64
-	err = a.db.QueryRow(r.Context(), `SELECT user_id FROM observations WHERE id = $1 AND NOT hidden`, oid).Scan(&owner)
+	err := a.db.QueryRow(r.Context(), `SELECT user_id FROM observations WHERE id = $1 AND NOT hidden`, oid).Scan(&owner)
 	if errors.Is(err, pgx.ErrNoRows) {
 		http.NotFound(w, r)
 		return
@@ -116,7 +113,7 @@ func (a *Server) addComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.blockedBetween(r, owner) {
-		writeJSON(w, http.StatusForbidden, map[string]string{"error": "you can't comment on this sighting"})
+		writeError(w, http.StatusForbidden, "you can't comment on this sighting")
 		return
 	}
 	var parentAuthor int64
@@ -125,11 +122,11 @@ func (a *Server) addComment(w http.ResponseWriter, r *http.Request) {
 		err := a.db.QueryRow(r.Context(), `SELECT user_id, parent_id IS NULL FROM comments WHERE id = $1 AND observation_id = $2 AND NOT hidden`,
 			*body.ParentID, oid).Scan(&parentAuthor, &topLevel)
 		if err != nil || !topLevel {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "you can reply to a comment on this sighting"})
+			writeError(w, http.StatusBadRequest, "you can reply to a comment on this sighting")
 			return
 		}
 		if a.blockedBetween(r, parentAuthor) {
-			writeJSON(w, http.StatusForbidden, map[string]string{"error": "you can't reply to this comment"})
+			writeError(w, http.StatusForbidden, "you can't reply to this comment")
 			return
 		}
 	}
@@ -165,9 +162,8 @@ func (a *Server) addComment(w http.ResponseWriter, r *http.Request) {
 
 // DELETE /comments/{id} — the author removes their words; replies stay in place.
 func (a *Server) deleteComment(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	tag, err := a.db.Exec(r.Context(), `UPDATE comments SET deleted = true, body = '-' WHERE id = $1 AND user_id = $2`, id, userID(r))
@@ -184,9 +180,8 @@ func (a *Server) deleteComment(w http.ResponseWriter, r *http.Request) {
 
 // POST /comments/{id}/report {reason} — once per person per comment.
 func (a *Server) reportComment(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	var body struct {
@@ -196,7 +191,7 @@ func (a *Server) reportComment(w http.ResponseWriter, r *http.Request) {
 	switch body.Reason {
 	case "spam", "harassment", "inappropriate", "other":
 	default:
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "reason must be spam, harassment, inappropriate or other"})
+		writeError(w, http.StatusBadRequest, "reason must be spam, harassment, inappropriate or other")
 		return
 	}
 	tag, err := a.db.Exec(r.Context(), `INSERT INTO comment_reports (comment_id, user_id, reason)
@@ -206,7 +201,7 @@ func (a *Server) reportComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if tag.RowsAffected() == 0 {
-		writeJSON(w, http.StatusConflict, map[string]string{"error": "you've already reported this comment (or it's yours)"})
+		writeError(w, http.StatusConflict, "you've already reported this comment (or it's yours)")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

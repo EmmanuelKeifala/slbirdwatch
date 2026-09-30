@@ -32,8 +32,12 @@ func (a *Server) follow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if tag.RowsAffected() == 0 {
+		// Nothing inserted: followed already, or the person is missing or behind a block.
 		var exists bool
-		a.db.QueryRow(r.Context(), `SELECT EXISTS (SELECT 1 FROM follows WHERE follower_id = $1 AND followee_id = $2)`, userID(r), id).Scan(&exists)
+		if err := a.db.QueryRow(r.Context(), `SELECT EXISTS (SELECT 1 FROM follows WHERE follower_id = $1 AND followee_id = $2)`, userID(r), id).Scan(&exists); err != nil {
+			internalError(w, "follow", err)
+			return
+		}
 		if !exists {
 			http.NotFound(w, r)
 			return
@@ -84,7 +88,7 @@ func (a *Server) activity(w http.ResponseWriter, r *http.Request) {
 	switch q.Get("scope") {
 	case "following":
 		if viewerID(r) == 0 {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "sign in to see people you follow"})
+			writeError(w, http.StatusUnauthorized, "sign in to see people you follow")
 			return
 		}
 		where = append(where, "o.user_id IN (SELECT followee_id FROM follows WHERE follower_id = $1)")
@@ -92,7 +96,7 @@ func (a *Server) activity(w http.ResponseWriter, r *http.Request) {
 		lat, err1 := strconv.ParseFloat(q.Get("lat"), 64)
 		lng, err2 := strconv.ParseFloat(q.Get("lng"), 64)
 		if err1 != nil || err2 != nil || lat < -90 || lat > 90 || lng < -180 || lng > 180 {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "near needs lat and lng"})
+			writeError(w, http.StatusBadRequest, "near needs lat and lng")
 			return
 		}
 		km, err := strconv.Atoi(q.Get("km"))
@@ -103,7 +107,7 @@ func (a *Server) activity(w http.ResponseWriter, r *http.Request) {
 		where = append(where, "NOT coalesce(cs.sensitive, false)", "NOT coalesce(s.sensitive, false)", "NOT u.hide_locations",
 			"ST_DWithin(o.location, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography, $4)")
 	default:
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "scope is near or following"})
+		writeError(w, http.StatusBadRequest, "scope is near or following")
 		return
 	}
 	a.listObservations(w, r, where, args, true)

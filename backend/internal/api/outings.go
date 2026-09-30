@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -26,23 +25,22 @@ func (a *Server) upsertOuting(w http.ResponseWriter, r *http.Request) {
 		EndedAt   *time.Time   `json:"ended_at"`
 		Route     []routePoint `json:"route"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 1<<20, &body) {
 		return
 	}
 	now := time.Now().Add(10 * time.Minute)
 	switch {
 	case body.ClientID == "" || len(body.ClientID) > 64:
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "client_id is required"})
+		writeError(w, http.StatusBadRequest, "client_id is required")
 		return
 	case body.StartedAt.IsZero() || body.StartedAt.After(now):
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "started_at must be a time in the past"})
+		writeError(w, http.StatusBadRequest, "started_at must be a time in the past")
 		return
 	case body.EndedAt != nil && (body.EndedAt.Before(body.StartedAt) || body.EndedAt.After(now) || body.EndedAt.Sub(body.StartedAt) > 72*time.Hour):
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "ended_at must be after the start and within 3 days"})
+		writeError(w, http.StatusBadRequest, "ended_at must be after the start and within 3 days")
 		return
 	case len(body.Route) > 20000:
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "route has too many points"})
+		writeError(w, http.StatusBadRequest, "route has too many points")
 		return
 	}
 	var line any // WKT LineString, or nil to keep what's stored
@@ -50,7 +48,7 @@ func (a *Server) upsertOuting(w http.ResponseWriter, r *http.Request) {
 		pts := make([]string, 0, len(body.Route))
 		for _, p := range body.Route {
 			if p[0] < -90 || p[0] > 90 || p[1] < -180 || p[1] > 180 {
-				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "route has an invalid point"})
+				writeError(w, http.StatusBadRequest, "route has an invalid point")
 				return
 			}
 			pts = append(pts, fmt.Sprintf("%f %f", p[1], p[0]))
@@ -90,9 +88,8 @@ type outingSpecie struct {
 
 // GET /outings/{id} — the outing's owner only.
 func (a *Server) getOuting(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	a.respondOuting(w, r, id)

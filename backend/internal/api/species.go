@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -63,12 +62,6 @@ type speciesItem struct {
 	Image          *speciesImage `json:"image"`
 }
 
-func writeJSON(w http.ResponseWriter, code int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(v)
-}
-
 // allowed reports whether v is a value of the given feature field (features.go vocabulary).
 func allowed(field, v string) bool {
 	for _, f := range featureFields {
@@ -97,7 +90,7 @@ func (a *Server) listSpecies(w http.ResponseWriter, r *http.Request) {
 	habitat, size, colour := qs.Get("habitat"), qs.Get("size"), qs.Get("colour")
 	for field, v := range map[string]string{"habitat": habitat, "size": size, "colours": colour} {
 		if v != "" && !allowed(field, v) {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unknown " + field + " " + v})
+			writeError(w, http.StatusBadRequest, "unknown "+field+" "+v)
 			return
 		}
 	}
@@ -108,7 +101,7 @@ func (a *Server) listSpecies(w http.ResponseWriter, r *http.Request) {
 		y, err1 := strconv.ParseFloat(la, 64)
 		x, err2 := strconv.ParseFloat(lo, 64)
 		if !ok || err1 != nil || err2 != nil || y < -90 || y > 90 || x < -180 || x > 180 {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "near must be lat,lng"})
+			writeError(w, http.StatusBadRequest, "near must be lat,lng")
 			return
 		}
 		lat, lng = &y, &x
@@ -120,8 +113,7 @@ func (a *Server) listSpecies(w http.ResponseWriter, r *http.Request) {
 	if limit <= 0 || limit > 100 {
 		limit = 50
 	}
-	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	offset = max(offset, 0)
+	offset := offsetParam(r)
 
 	// ponytail: offset paging; switch to keyset on seq if deep paging gets slow.
 	rows, err := a.db.Query(r.Context(), `
@@ -165,11 +157,7 @@ func (a *Server) listSpecies(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := map[string]any{"items": items, "next_offset": nil}
-	if len(items) > limit {
-		resp["items"], resp["next_offset"] = items[:limit], offset+limit
-	}
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(w, http.StatusOK, page(items, limit, offset))
 }
 
 type speciesDetail struct {
@@ -248,9 +236,8 @@ type regionInfo struct {
 
 // GET /species/{id} — public species page data (LIB-01 grows from here).
 func (a *Server) getSpecies(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	if bearer(r) == "" && a.cache != nil { // ADM-06: anonymous library visits, per day
@@ -465,13 +452,11 @@ type communityPhoto struct {
 
 // GET /species/{id}/photos?offset= — LIB-02: photos from verified sightings of this species, credited to the observer.
 func (a *Server) speciesPhotos(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
-	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	offset = max(offset, 0)
+	offset := offsetParam(r)
 	const limit = 30
 	rows, err := a.db.Query(r.Context(), `
 		SELECT m.id, m.key, m.thumb_key, m.width, m.height, m.licence, m.quiz_suitable, m.reference, o.id, u.display_name, m.tags
@@ -495,11 +480,7 @@ func (a *Server) speciesPhotos(w http.ResponseWriter, r *http.Request) {
 		internalError(w, "species photos", err)
 		return
 	}
-	resp := map[string]any{"items": items, "next_offset": nil}
-	if len(items) > limit {
-		resp["items"], resp["next_offset"] = items[:limit], offset+limit
-	}
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(w, http.StatusOK, page(items, limit, offset))
 }
 
 type family struct {

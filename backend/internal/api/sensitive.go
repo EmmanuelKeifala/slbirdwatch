@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
@@ -54,7 +53,7 @@ func (a *Server) listSensitive(w http.ResponseWriter, r *http.Request) {
 
 // PUT /admin/species/{id}/sensitive {sensitive, km: 11|22|55}
 func (a *Server) setSensitive(w http.ResponseWriter, r *http.Request) {
-	id, ok := speciesPathID(w, r)
+	id, ok := pathID(w, r, "id")
 	if !ok {
 		return
 	}
@@ -62,8 +61,7 @@ func (a *Server) setSensitive(w http.ResponseWriter, r *http.Request) {
 		Sensitive bool `json:"sensitive"`
 		Km        int  `json:"km"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 1024, &body) {
 		return
 	}
 	if body.Km == 0 {
@@ -71,7 +69,7 @@ func (a *Server) setSensitive(w http.ResponseWriter, r *http.Request) {
 	}
 	cell, ok := obscureLevels[body.Km]
 	if !ok {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "km must be 11, 22 or 55"})
+		writeError(w, http.StatusBadRequest, "km must be 11, 22 or 55")
 		return
 	}
 	tag, err := a.db.Exec(r.Context(), `UPDATE species SET sensitive = $2, obscure_cell = $3 WHERE id = $1`, id, body.Sensitive, cell)

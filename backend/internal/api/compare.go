@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"slices"
 	"strconv"
@@ -24,7 +25,7 @@ type similarSpecies struct {
 // GET /species/{id}/similar — up to 8 lookalikes: species the community has actually mixed up with this one
 // (different IDs on the same sighting), then the same genus, then the same family; Sierra Leone birds first.
 func (a *Server) similarSpecies(w http.ResponseWriter, r *http.Request) {
-	id, ok := speciesPathID(w, r)
+	id, ok := pathID(w, r, "id")
 	if !ok {
 		return
 	}
@@ -101,14 +102,14 @@ func (a *Server) compare(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(ids) < 2 || len(ids) > 4 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "compare 2 to 4 species"})
+		writeError(w, http.StatusBadRequest, "compare 2 to 4 species")
 		return
 	}
 	items := make([]compareItem, 0, len(ids))
 	for _, id := range ids {
 		it, err := a.compareOne(r.Context(), id)
-		if err == pgx.ErrNoRows {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unknown species " + strconv.FormatInt(id, 10)})
+		if errors.Is(err, pgx.ErrNoRows) {
+			writeError(w, http.StatusBadRequest, "unknown species "+strconv.FormatInt(id, 10))
 			return
 		}
 		if err != nil {
@@ -203,7 +204,7 @@ func (a *Server) compareOne(ctx context.Context, id int64) (compareItem, error) 
 	if err == nil {
 		snd.URL, snd.SpectrogramURL, snd.DurationS = a.media.URL(snd.URL), a.media.URL(snd.SpectrogramURL), float64(ms)/1000
 		it.Sound = &snd
-	} else if err != pgx.ErrNoRows {
+	} else if !errors.Is(err, pgx.ErrNoRows) {
 		return it, err
 	}
 

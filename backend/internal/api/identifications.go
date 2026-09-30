@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"slices"
@@ -133,31 +132,29 @@ type identification struct {
 
 // POST /observations/{id}/identifications — VER-01. {species_id, reason}; replaces the caller's previous ID.
 func (a *Server) addIdentification(w http.ResponseWriter, r *http.Request) {
-	oid, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	oid, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	var body struct {
 		SpeciesID int64  `json:"species_id"`
 		Reason    string `json:"reason"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 4096, &body) {
 		return
 	}
 	body.Reason = strings.TrimSpace(body.Reason)
 	if len([]rune(body.Reason)) > 500 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "reason must be at most 500 characters"})
+		writeError(w, http.StatusBadRequest, "reason must be at most 500 characters")
 		return
 	}
 	if a.rateLimited(r.Context(), "id:"+strconv.FormatInt(userID(r), 10), 300, time.Hour) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many identifications, try again later"})
+		writeError(w, http.StatusTooManyRequests, "too many identifications, try again later")
 		return
 	}
 	var owner int64
 	var extinct bool
-	err = a.db.QueryRow(r.Context(), `
+	err := a.db.QueryRow(r.Context(), `
 		SELECT o.user_id, coalesce((SELECT extinct OR merged_into IS NOT NULL FROM species WHERE id = $2), true)
 		FROM observations o WHERE o.id = $1`, oid, body.SpeciesID).Scan(&owner, &extinct)
 	switch {
@@ -168,13 +165,13 @@ func (a *Server) addIdentification(w http.ResponseWriter, r *http.Request) {
 		internalError(w, "identify", err)
 		return
 	case owner == userID(r):
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "edit your own sighting to change its species"})
+		writeError(w, http.StatusBadRequest, "edit your own sighting to change its species")
 		return
 	case a.blockedBetween(r, owner):
-		writeJSON(w, http.StatusForbidden, map[string]string{"error": "you can't identify this sighting"})
+		writeError(w, http.StatusForbidden, "you can't identify this sighting")
 		return
 	case extinct:
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unknown species"})
+		writeError(w, http.StatusBadRequest, "unknown species")
 		return
 	}
 	err = pgx.BeginFunc(r.Context(), a.db, func(tx pgx.Tx) error {
@@ -208,13 +205,12 @@ func (a *Server) addIdentification(w http.ResponseWriter, r *http.Request) {
 
 // DELETE /observations/{id}/identifications — withdraw the caller's current ID.
 func (a *Server) withdrawIdentification(w http.ResponseWriter, r *http.Request) {
-	oid, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	oid, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	var n int64
-	err = pgx.BeginFunc(r.Context(), a.db, func(tx pgx.Tx) error {
+	err := pgx.BeginFunc(r.Context(), a.db, func(tx pgx.Tx) error {
 		tag, err := tx.Exec(r.Context(), `UPDATE identifications SET is_current = false
 			WHERE observation_id = $1 AND user_id = $2 AND is_current`, oid, userID(r))
 		if err != nil {
@@ -239,9 +235,8 @@ func (a *Server) withdrawIdentification(w http.ResponseWriter, r *http.Request) 
 // GET /observations/{id}/identifications — public list of current IDs, oldest first.
 func (a *Server) listIdentifications(w http.ResponseWriter, r *http.Request) {
 	viewer := viewerID(r)
-	oid, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	oid, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	rows, err := a.db.Query(r.Context(), `
@@ -299,26 +294,24 @@ var flagReasons = []string{"wrong_id", "captive", "poor_quality", "inappropriate
 
 // POST /observations/{id}/flags — VER-05. {reason, note}; reviewed in the moderation queue (ADM-01).
 func (a *Server) flagObservation(w http.ResponseWriter, r *http.Request) {
-	oid, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	oid, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	var body struct {
 		Reason string `json:"reason"`
 		Note   string `json:"note"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 4096, &body) {
 		return
 	}
 	body.Note = strings.TrimSpace(body.Note)
 	if !slices.Contains(flagReasons, body.Reason) || len([]rune(body.Note)) > 500 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "reason must be one of wrong_id, captive, poor_quality, inappropriate, sensitive_location (note ≤ 500 chars)"})
+		writeError(w, http.StatusBadRequest, "reason must be one of wrong_id, captive, poor_quality, inappropriate, sensitive_location (note ≤ 500 chars)")
 		return
 	}
 	if a.rateLimited(r.Context(), "flag:"+strconv.FormatInt(userID(r), 10), 50, time.Hour) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many reports, try again later"})
+		writeError(w, http.StatusTooManyRequests, "too many reports, try again later")
 		return
 	}
 	var owner int64
@@ -330,14 +323,14 @@ func (a *Server) flagObservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if owner == userID(r) {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "you can't report your own sighting"})
+		writeError(w, http.StatusBadRequest, "you can't report your own sighting")
 		return
 	}
-	_, err = a.db.Exec(r.Context(), `INSERT INTO flags (observation_id, user_id, reason, note) VALUES ($1, $2, $3, $4)`,
+	_, err := a.db.Exec(r.Context(), `INSERT INTO flags (observation_id, user_id, reason, note) VALUES ($1, $2, $3, $4)`,
 		oid, userID(r), body.Reason, body.Note)
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		writeJSON(w, http.StatusConflict, map[string]string{"error": "you've already reported this"})
+		writeError(w, http.StatusConflict, "you've already reported this")
 		return
 	}
 	if err != nil {

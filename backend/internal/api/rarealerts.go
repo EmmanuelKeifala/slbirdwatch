@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
@@ -59,13 +58,12 @@ type alertSettings struct {
 func (a *Server) rareAlerts(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPut {
 		var s alertSettings
-		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&s); err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+		if !readJSON(w, r, 1024, &s) {
 			return
 		}
 		if s.Km < 5 || s.Km > 100 || (s.On && (s.Lat == nil || s.Lng == nil)) ||
 			(s.Lat != nil && (*s.Lat < -90 || *s.Lat > 90)) || (s.Lng != nil && (*s.Lng < -180 || *s.Lng > 180)) {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "a radius of 5–100 km, and a place when switching on"})
+			writeError(w, http.StatusBadRequest, "a radius of 5–100 km, and a place when switching on")
 			return
 		}
 		if _, err := a.db.Exec(r.Context(), `UPDATE users SET rare_alerts = $2, alert_lat = coalesce($3, alert_lat),

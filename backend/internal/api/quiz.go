@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/rand/v2"
 	"net/http"
@@ -301,21 +300,6 @@ func (a *Server) buildQuiz(r *http.Request, kind, pool string) ([]quizQuestion, 
 	return questions, nil
 }
 
-// httpErr is a request failure from a helper, written by the handler.
-type httpErr struct {
-	code int
-	msg  string
-	err  error // for 500s
-}
-
-func (e *httpErr) write(w http.ResponseWriter) {
-	if e.code == http.StatusInternalServerError {
-		internalError(w, e.msg, e.err)
-		return
-	}
-	writeJSON(w, e.code, map[string]string{"error": e.msg})
-}
-
 func (a *Server) runQuiz(w http.ResponseWriter, r *http.Request, kind, pool string) {
 	questions, e := a.buildQuiz(r, kind, pool)
 	if e != nil {
@@ -388,8 +372,7 @@ func (a *Server) setQuizSuitable(w http.ResponseWriter, r *http.Request) {
 		MediaRef string `json:"media_ref"`
 		Suitable bool   `json:"suitable"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 1024, &body) {
 		return
 	}
 	kind, idStr, _ := strings.Cut(body.MediaRef, ":")
@@ -409,7 +392,7 @@ func (a *Server) setQuizSuitable(w http.ResponseWriter, r *http.Request) {
 		sql = `UPDATE species_sound_gallery SET quiz_suitable = $2 WHERE id = $1`
 	}
 	if sql == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": `media_ref must be species:, species-sound:, photo:, sound:, gallery: or sound-gallery: plus an id`})
+		writeError(w, http.StatusBadRequest, `media_ref must be species:, species-sound:, photo:, sound:, gallery: or sound-gallery: plus an id`)
 		return
 	}
 	tag, err := a.db.Exec(r.Context(), sql, id, body.Suitable)

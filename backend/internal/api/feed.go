@@ -13,8 +13,7 @@ import (
 // listObservations runs a filtered observation query, applies redaction for the viewer, attaches photos,
 // and writes a page. where/args are ANDed onto observationSelect; $1 is reserved for the viewer id.
 func (a *Server) listObservations(w http.ResponseWriter, r *http.Request, where []string, args []any, redact bool) {
-	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	offset = max(offset, 0)
+	offset := offsetParam(r)
 	const limit = 30
 	args = append([]any{viewerID(r)}, args...)
 	sql := observationSelect
@@ -38,11 +37,7 @@ func (a *Server) listObservations(w http.ResponseWriter, r *http.Request, where 
 		internalError(w, "list observations", err)
 		return
 	}
-	resp := map[string]any{"items": items, "next_offset": nil}
-	if len(items) > limit {
-		resp["items"], resp["next_offset"] = items[:limit], offset+limit
-	}
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(w, http.StatusOK, page(items, limit, offset))
 }
 
 // GET /observations?status=needs_id|community|verified&not_mine=1 — public feed, newest first, redacted (OBS-14/ACC-08).
@@ -51,7 +46,7 @@ func (a *Server) feed(w http.ResponseWriter, r *http.Request) {
 	var args []any
 	if st := r.URL.Query().Get("status"); st != "" {
 		if !slices.Contains([]string{"needs_id", "community", "verified"}, st) {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "status must be needs_id, community or verified"})
+			writeError(w, http.StatusBadRequest, "status must be needs_id, community or verified")
 			return
 		}
 		args = append(args, st)
@@ -87,7 +82,7 @@ func (a *Server) verifyQueue(w http.ResponseWriter, r *http.Request) {
 		for i, k := range []string{"min_lat", "max_lat", "min_lng", "max_lng"} {
 			v, err := strconv.ParseFloat(q.Get(k), 64)
 			if err != nil {
-				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "min_lat, max_lat, min_lng and max_lng must all be numbers"})
+				writeError(w, http.StatusBadRequest, "min_lat, max_lat, min_lng and max_lng must all be numbers")
 				return
 			}
 			box[i] = v

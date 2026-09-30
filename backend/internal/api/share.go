@@ -69,9 +69,8 @@ func renderShare(w http.ResponseWriter, d shareData) {
 
 // GET /s/{id} — a species.
 func (a *Server) shareSpecies(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	sp, err := a.loadSpeciesDetail(r.Context(), id)
@@ -112,9 +111,8 @@ func (a *Server) shareSpecies(w http.ResponseWriter, r *http.Request) {
 
 // GET /o/{id} — a sighting, as a signed-out visitor would see it.
 func (a *Server) shareObservation(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	o, err := a.scanObservation(a.db.QueryRow(r.Context(), observationSelect+` WHERE o.id = $1 AND NOT o.hidden`, id))

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"slices"
 	"strconv"
@@ -43,14 +42,13 @@ func (a *Server) setPhotoTags(w http.ResponseWriter, r *http.Request) {
 		MediaRef string   `json:"media_ref"`
 		Tags     []string `json:"tags"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !readJSON(w, r, 1024, &body) {
 		return
 	}
 	kind, idStr, _ := strings.Cut(body.MediaRef, ":")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil || (kind != "photo" && kind != "sound" && kind != "gallery") {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": `media_ref must be "photo:<id>", "sound:<id>" or "gallery:<id>"`})
+		writeError(w, http.StatusBadRequest, `media_ref must be "photo:<id>", "sound:<id>" or "gallery:<id>"`)
 		return
 	}
 	vocab := photoTags
@@ -59,7 +57,7 @@ func (a *Server) setPhotoTags(w http.ResponseWriter, r *http.Request) {
 	}
 	tags, msg := cleanTags(body.Tags, vocab)
 	if msg != "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": msg})
+		writeError(w, http.StatusBadRequest, msg)
 		return
 	}
 	var verifier bool
@@ -71,7 +69,7 @@ func (a *Server) setPhotoTags(w http.ResponseWriter, r *http.Request) {
 	        WHERE m.id = $1 AND m.kind = $5::text AND o.id = m.observation_id AND (o.user_id = $3 OR $4)`
 	if kind == "gallery" {
 		if !verifier {
-			writeJSON(w, http.StatusForbidden, map[string]string{"error": "only verifiers can tag gallery photos"})
+			writeError(w, http.StatusForbidden, "only verifiers can tag gallery photos")
 			return
 		}
 		sql = `UPDATE species_gallery SET tags = $2,
@@ -84,7 +82,7 @@ func (a *Server) setPhotoTags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if tag.RowsAffected() == 0 {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "no such photo, or it isn't yours to tag"})
+		writeError(w, http.StatusNotFound, "no such photo, or it isn't yours to tag")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"tags": tags})

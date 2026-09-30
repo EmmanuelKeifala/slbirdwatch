@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -121,7 +120,7 @@ type observationInput struct {
 func (a *Server) readObservation(w http.ResponseWriter, r *http.Request) (observationInput, bool) {
 	var in observationInput
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16384)).Decode(&in); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body (observed_at must be RFC 3339)"})
+		writeError(w, http.StatusBadRequest, "invalid JSON body (observed_at must be RFC 3339)")
 		return in, false
 	}
 	in.Notes = strings.TrimSpace(in.Notes)
@@ -130,7 +129,7 @@ func (a *Server) readObservation(w http.ResponseWriter, r *http.Request) (observ
 		in.Count = &one
 	}
 	bad := func(msg string) (observationInput, bool) {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": msg})
+		writeError(w, http.StatusBadRequest, msg)
 		return in, false
 	}
 	finite := func(f float64) bool { return !math.IsNaN(f) && !math.IsInf(f, 0) }
@@ -207,17 +206,22 @@ func (a *Server) createObservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(in.ClientID) > 64 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "client_id is too long"})
+		writeError(w, http.StatusBadRequest, "client_id is too long")
 		return
 	}
-	if code, body := a.spamCheck(r, in); code != 0 {
+	code, body, err := a.spamCheck(r.Context(), userID(r), in)
+	if err != nil {
+		internalError(w, "spam check", err)
+		return
+	}
+	if code != 0 {
 		writeJSON(w, code, body)
 		return
 	}
 	// OBS-09: a retried offline upload (same client_id) gets the sighting it already created, not a copy.
 	var id int64
 	status := http.StatusCreated
-	err := a.db.QueryRow(r.Context(), `
+	err = a.db.QueryRow(r.Context(), `
 		INSERT INTO observations (user_id, species_id, observed_at, location, accuracy_m, count, notes, features, confidence, site_id, client_id, outing_id)
 		VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($5, $4), 4326)::geography, $6, $7, $8, $9, nullif($10, '')::id_confidence, $11, nullif($12, ''), $13)
 		ON CONFLICT (user_id, client_id) WHERE client_id IS NOT NULL DO NOTHING
@@ -244,8 +248,7 @@ func (a *Server) createObservation(w http.ResponseWriter, r *http.Request) {
 
 // GET /me/observations?offset= — newest sighting first.
 func (a *Server) myObservations(w http.ResponseWriter, r *http.Request) {
-	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	offset = max(offset, 0)
+	offset := offsetParam(r)
 	const limit = 50
 	rows, err := a.db.Query(r.Context(), observationSelect+`
 		WHERE o.user_id = $1 ORDER BY o.observed_at DESC, o.id DESC LIMIT $2 OFFSET $3`, userID(r), limit+1, offset)
@@ -290,8 +293,8 @@ func (a *Server) redact(ctx context.Context, obs []observation, viewerID int64) 
 		}
 		if viewerID != 0 && !checked {
 			checked = true
-			var role string
-			if err := a.db.QueryRow(ctx, `SELECT role FROM users WHERE id = $1`, viewerID).Scan(&role); err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			role, err := a.roleOf(ctx, viewerID)
+			if err != nil {
 				return err
 			}
 			exact = roleAtLeast(role, "verifier")
@@ -305,9 +308,8 @@ func (a *Server) redact(ctx context.Context, obs []observation, viewerID int64) 
 
 // GET /observations/{id} — public; sensitive locations are obscured (OBS-14).
 func (a *Server) getObservation(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	o, err := a.scanObservation(a.db.QueryRow(r.Context(), observationSelect+` WHERE o.id = $1 AND (NOT o.hidden OR o.user_id = $2
@@ -334,9 +336,8 @@ func (a *Server) getObservation(w http.ResponseWriter, r *http.Request) {
 
 // PUT /observations/{id} — OBS-11. Owner replaces the editable fields; changed fields are logged.
 func (a *Server) updateObservation(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	in, ok := a.readObservation(w, r)
@@ -344,7 +345,7 @@ func (a *Server) updateObservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var o observation
-	err = pgx.BeginFunc(r.Context(), a.db, func(tx pgx.Tx) error {
+	err := pgx.BeginFunc(r.Context(), a.db, func(tx pgx.Tx) error {
 		cur, err := a.scanObservation(tx.QueryRow(r.Context(), observationSelect+` WHERE o.id = $1 AND o.user_id = $2 FOR UPDATE OF o`, id, userID(r)))
 		if err != nil {
 			return err
@@ -429,9 +430,8 @@ func canonical(f features) string {
 
 // DELETE /observations/{id} — owner; removes its photos from storage too.
 func (a *Server) deleteObservation(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	rows, err := a.db.Query(r.Context(), `
@@ -473,14 +473,13 @@ func (a *Server) deleteObservation(w http.ResponseWriter, r *http.Request) {
 
 // GET /observations/{id}/history — the observer and verifiers+ only (it can reveal exact locations).
 func (a *Server) observationHistory(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.NotFound(w, r)
+	id, ok := pathID(w, r, "id")
+	if !ok {
 		return
 	}
 	var owner int64
 	var role string
-	err = a.db.QueryRow(r.Context(), `
+	err := a.db.QueryRow(r.Context(), `
 		SELECT o.user_id, (SELECT role::text FROM users WHERE id = $2) FROM observations o WHERE o.id = $1`, id, userID(r)).Scan(&owner, &role)
 	if errors.Is(err, pgx.ErrNoRows) || (err == nil && owner != userID(r) && !roleAtLeast(role, "verifier")) {
 		http.NotFound(w, r)
