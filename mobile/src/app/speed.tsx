@@ -9,6 +9,7 @@ import { useAuth } from '@/state/auth';
 import { bestScores, recordScore } from '@/state/gameScores';
 import { close } from '@/lib/nav';
 import { Pressable } from '@/components/Pressable';
+import { GameBar } from '@/components/GameBar';
 import { saveQuiz } from '@/state/quizStore';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
@@ -143,18 +144,21 @@ export default function Speed() {
   const q = questions![Math.min(i, questions!.length - 1)];
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
-      <View style={styles.top}>
-        <Pressable onPress={close} hitSlop={12} accessibilityRole="button" accessibilityLabel="Quit">
-          <Feather name="x" size={24} color={c.ink} />
-        </Pressable>
+      <GameBar
+        onClose={close}
+        right={
+          <>
+            <Text style={[styles.clock, { color: left <= 10 ? c.wrong : c.ink }]} accessibilityLiveRegion="polite">
+              {Math.max(0, left)}s
+            </Text>
+            <Text style={[styles.clock, { color: c.ink }]}>★ {score}</Text>
+          </>
+        }
+      >
         <View style={[styles.track, { backgroundColor: c.tint }]}>
           <View style={[styles.fill, { backgroundColor: left <= 10 ? c.wrong : c.accent, width: `${(100 * left) / SECONDS}%` }]} />
         </View>
-        <Text style={[styles.clock, { color: left <= 10 ? c.wrong : c.ink }]} accessibilityLiveRegion="polite">
-          {Math.max(0, left)}s
-        </Text>
-        <Text style={[styles.clock, { color: c.ink }]}>★ {score}</Text>
-      </View>
+      </GameBar>
       <ScrollView contentContainerStyle={styles.content} scrollEnabled={false}>
         <View style={[styles.photoWrap, { backgroundColor: tileFor(c, q.answer.id) }]}>
           {q.image && (
@@ -185,7 +189,6 @@ export default function Speed() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.xxl, gap: space.m },
-  top: { flexDirection: 'row', alignItems: 'center', gap: space.m, paddingHorizontal: space.screen, paddingVertical: space.m },
   track: { flex: 1, height: 10, borderRadius: radius.pill, overflow: 'hidden' },
   fill: { height: 10, borderRadius: radius.pill },
   clock: { fontFamily: font.display, fontSize: 18, minWidth: 36, textAlign: 'right' },

@@ -9,6 +9,7 @@ import { useAuth } from '@/state/auth';
 import { bestScores, recordScore } from '@/state/gameScores';
 import { close } from '@/lib/nav';
 import { Pressable } from '@/components/Pressable';
+import { GameBar } from '@/components/GameBar';
 import { saveQuiz } from '@/state/quizStore';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
@@ -122,15 +123,7 @@ export default function Reveal() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
-      <View style={styles.top}>
-        <Pressable onPress={close} hitSlop={12} accessibilityRole="button" accessibilityLabel="Quit">
-          <Feather name="x" size={24} color={c.ink} />
-        </Pressable>
-        <Text style={[styles.kicker, { color: c.accentDeep }]}>
-          REVEAL · {i + 1}/{questions.length}
-        </Text>
-        <Text style={[styles.score, { color: c.ink }]}>★ {score}</Text>
-      </View>
+      <GameBar onClose={close} label={`REVEAL · ${i + 1}/${questions.length}`} right={<Text style={[styles.score, { color: c.ink }]}>★ {score}</Text>} />
       <ScrollView contentContainerStyle={styles.content}>
         <View
           style={[styles.photoWrap, { backgroundColor: tileFor(c, q.answer.id) }]}
@@ -212,8 +205,6 @@ export default function Reveal() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.xxl, gap: space.m },
-  top: { flexDirection: 'row', alignItems: 'center', gap: space.m, paddingHorizontal: space.screen, paddingVertical: space.m },
-  kicker: { flex: 1, fontFamily: font.bold, fontSize: 12, letterSpacing: 1, textAlign: 'center' },
   score: { fontFamily: font.display, fontSize: 18 },
   content: { padding: space.screen, gap: space.m, paddingBottom: space.xxl * 3 },
   photoWrap: { borderRadius: radius.card, overflow: 'hidden', aspectRatio: 4 / 3 },

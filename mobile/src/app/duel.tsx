@@ -11,6 +11,7 @@ import { FormScroll } from '@/components/FormScroll';
 import { close, signInFirst } from '@/lib/nav';
 import { Pressable } from '@/components/Pressable';
 import { SoundPlayer } from '@/components/SoundPlayer';
+import { GameBar } from '@/components/GameBar';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
 
@@ -83,13 +84,7 @@ export default function DuelScreen() {
   if (!duel) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
-        <View style={styles.top}>
-          <Pressable onPress={close} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close">
-            <Feather name="x" size={24} color={c.ink} />
-          </Pressable>
-          <Text style={[styles.kicker, { color: c.accentDeep }]}>CHALLENGE A FRIEND</Text>
-          <View style={{ width: 24 }} />
-        </View>
+        <GameBar onClose={close} closeLabel="Close" label="CHALLENGE A FRIEND" />
         <FormScroll contentContainerStyle={styles.content}>
           <Text style={[styles.title, { color: c.ink }]}>Same 10 birds, who knows them best?</Text>
           <Text style={[styles.body, { color: c.inkMuted, textAlign: 'left' }]}>
@@ -166,13 +161,7 @@ export default function DuelScreen() {
   if (duel.played) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
-        <View style={styles.top}>
-          <Pressable onPress={() => setDuel(null)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
-            <Feather name="arrow-left" size={24} color={c.ink} />
-          </Pressable>
-          <Text style={[styles.kicker, { color: c.accentDeep }]}>CHALLENGE {duel.code}</Text>
-          <View style={{ width: 24 }} />
-        </View>
+        <GameBar onClose={() => setDuel(null)} closeLabel="Back" back label={`CHALLENGE ${duel.code}`} />
         <FormScroll contentContainerStyle={styles.content}>
           {duel.scores.map((s, k) => (
             <View
@@ -227,15 +216,7 @@ export default function DuelScreen() {
   };
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
-      <View style={styles.top}>
-        <Pressable onPress={close} hitSlop={12} accessibilityRole="button" accessibilityLabel="Quit">
-          <Feather name="x" size={24} color={c.ink} />
-        </Pressable>
-        <Text style={[styles.kicker, { color: c.accentDeep }]}>
-          vs {duel.creator.display_name} · {i + 1}/{duel.questions.length}
-        </Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <GameBar onClose={close} label={`vs ${duel.creator.display_name} · ${i + 1}/${duel.questions.length}`} />
       <FormScroll contentContainerStyle={styles.content}>
         {q.sound ? (
           <SoundPlayer key={q.media_ref} sound={{ url: q.sound.url, spectrogram_url: q.sound.spectrogram_url, duration_s: 0 }} />
@@ -276,8 +257,6 @@ export default function DuelScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.xxl, gap: space.m },
-  top: { flexDirection: 'row', alignItems: 'center', gap: space.m, paddingHorizontal: space.screen, paddingVertical: space.m },
-  kicker: { flex: 1, fontFamily: font.bold, fontSize: 12, letterSpacing: 1, textAlign: 'center' },
   content: { padding: space.screen, gap: space.m, paddingBottom: space.xxl * 2 },
   title: { fontFamily: font.display, fontSize: 26, lineHeight: 30 },
   h2: { fontFamily: font.display, fontSize: 20, marginTop: space.m },

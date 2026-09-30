@@ -38,15 +38,8 @@ export function GameBar({
   );
 }
 
-/** Right-hand text for GameBar: a round count or score. */
-export function GameBarText({ children, color }: { children: ReactNode; color?: string }) {
-  const c = useColors();
-  return <Text style={[styles.side, { color: color ?? c.inkMuted }]}>{children}</Text>;
-}
-
 const styles = StyleSheet.create({
   bar: { flexDirection: 'row', alignItems: 'center', gap: space.m, paddingHorizontal: space.screen, paddingVertical: space.m },
   label: { flex: 1, fontFamily: font.bold, fontSize: 12, letterSpacing: 1, textAlign: 'center' },
-  side: { fontFamily: font.semibold, fontSize: 13, minWidth: 24, textAlign: 'right' },
   spacer: { width: 24 },
 });

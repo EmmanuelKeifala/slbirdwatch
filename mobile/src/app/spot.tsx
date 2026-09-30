@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { mediaUrl, spotGame, type SpotRound } from '@/api';
 import { close } from '@/lib/nav';
 import { Pressable } from '@/components/Pressable';
+import { GameBar } from '@/components/GameBar';
 import { font, radius, space, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
 
@@ -87,15 +88,15 @@ export default function Spot() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
-      <View style={styles.top}>
-        <Pressable onPress={close} hitSlop={12} accessibilityRole="button" accessibilityLabel="Quit">
-          <Feather name="x" size={24} color={c.ink} />
-        </Pressable>
-        <Text style={[styles.kicker, { color: c.accentDeep }]}>SPOT THE DIFFERENCE</Text>
-        <Text style={[styles.count, { color: c.inkMuted }]}>
-          {i + 1}/{rounds.length}
-        </Text>
-      </View>
+      <GameBar
+        onClose={close}
+        label="SPOT THE DIFFERENCE"
+        right={
+          <Text style={[styles.count, { color: c.inkMuted }]}>
+            {i + 1}/{rounds.length}
+          </Text>
+        }
+      />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={[styles.question, { color: c.ink }]}>Which one is the {r.target.english_name}?</Text>
         <Text style={[styles.body, { color: c.inkMuted }]}>The other is a close relative. Look at bill, markings and colour.</Text>
@@ -168,8 +169,6 @@ export default function Spot() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.xxl, gap: space.m },
-  top: { flexDirection: 'row', alignItems: 'center', gap: space.m, paddingHorizontal: space.screen, paddingVertical: space.m },
-  kicker: { flex: 1, fontFamily: font.bold, fontSize: 12, letterSpacing: 1, textAlign: 'center' },
   count: { fontFamily: font.semibold, fontSize: 13 },
   content: { padding: space.screen, gap: space.m, paddingBottom: space.xxl * 3 },
   question: { fontFamily: font.display, fontSize: 26, lineHeight: 30 },

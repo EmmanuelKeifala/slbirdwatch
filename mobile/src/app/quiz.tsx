@@ -18,6 +18,7 @@ import { lookups } from '@/state/lookups';
 import { quizLevel, quizTyping, setQuizLevel, setQuizTyping, type QuizLevel } from '@/state/quizLevel';
 import { currentStats, saveQuiz } from '@/state/quizStore';
 import { SoundPlayer } from '@/components/SoundPlayer';
+import { GameBar } from '@/components/GameBar';
 import { accuracy, type QuizStats } from '@/lib/stats';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
@@ -202,17 +203,19 @@ export default function Quiz() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
-      <View style={styles.top}>
-        <Pressable onPress={close} hitSlop={12} accessibilityRole="button" accessibilityLabel="Quit quiz">
-          <Feather name="x" size={24} color={c.ink} />
-        </Pressable>
+      <GameBar
+        onClose={close}
+        closeLabel="Quit quiz"
+        right={
+          <Text style={[styles.count, { color: c.inkMuted }]}>
+            {i + 1}/{questions.length}
+          </Text>
+        }
+      >
         <View style={[styles.track, { backgroundColor: c.tint }]}>
           <View style={[styles.fill, { backgroundColor: c.accent, width: `${((i + (answered ? 1 : 0)) / questions.length) * 100}%` }]} />
         </View>
-        <Text style={[styles.count, { color: c.inkMuted }]}>
-          {i + 1}/{questions.length}
-        </Text>
-      </View>
+      </GameBar>
 
       <FormScroll contentContainerStyle={styles.content}>
         <Text style={[styles.question, { color: c.ink }]} accessibilityRole="header">
@@ -425,7 +428,6 @@ const styles = StyleSheet.create({
   },
   reasonText: { fontFamily: font.semibold, fontSize: 12 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.xxl, gap: space.l },
-  top: { flexDirection: 'row', alignItems: 'center', gap: space.m, paddingHorizontal: space.screen, height: 56 },
   track: { flex: 1, height: 8, borderRadius: radius.pill, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: radius.pill },
   count: { fontFamily: font.semibold, fontSize: 13, minWidth: 36, textAlign: 'right' },
