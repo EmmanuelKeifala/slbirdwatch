@@ -7,11 +7,18 @@
     "development": {
       "developmentClient": false,
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": {
+        "buildType": "apk"
+      }
     },
     "preview": {
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://slbirdwatch-api.onrender.com"
+      }
     },
     "production": {
       "autoIncrement": true
