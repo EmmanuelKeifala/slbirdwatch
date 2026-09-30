@@ -105,7 +105,7 @@ export default function Species() {
       {!sp ? (
         <View style={primed ? undefined : styles.center}>
           {primed && (
-            <HeroMedia id={primed.id} uri={primed.image ? mediaUrl(primed.image.thumb_url) : null} actions={[]} />
+            <HeroMedia id={primed.id} uri={primed.image ? mediaUrl(primed.image.thumb_url) : null} actions={[]} sharedTag={`species-${id}`} />
           )}
           {error ? (
             <Text style={[styles.body, { color: c.wrong, margin: space.xl }]}>Couldn’t load this bird. Check your connection.</Text>
@@ -118,6 +118,7 @@ export default function Species() {
           <ScrollView ref={scroll} contentContainerStyle={{ paddingBottom: 130 }}>
             <HeroMedia
               id={sp.id}
+              sharedTag={`species-${id}`}
               uri={heroUrl ? mediaUrl(heroUrl) : null}
               placeholder={sp.image && heroUrl === sp.image.url ? mediaUrl(sp.image.thumb_url) : undefined}
               chips={[

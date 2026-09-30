@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ComponentProps } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { Image } from 'expo-image';
 
 import { BirdArt } from '@/BirdArt';
@@ -22,17 +23,20 @@ export function HeroMedia({
   placeholder,
   chips = [],
   actions,
+  sharedTag,
 }: {
   id: number;
   uri: string | null;
   placeholder?: string;
   chips?: string[];
   actions: HeroAction[];
+  /** The tapped card's tile grows into this picture (Reanimated shared transition; APK builds only). */
+  sharedTag?: string;
 }) {
   const c = useColors();
 
   return (
-    <View style={[styles.card, { backgroundColor: tileFor(c, id) }]}>
+    <Animated.View sharedTransitionTag={sharedTag} style={[styles.card, { backgroundColor: tileFor(c, id) }]}>
       {uri ? (
         <Image
           source={{ uri }}
@@ -82,7 +86,7 @@ export function HeroMedia({
           </Pressable>
         ))}
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

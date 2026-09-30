@@ -1,16 +1,31 @@
 import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 
+import Animated from 'react-native-reanimated';
+
 import { Pressable } from '@/Pressable';
 
 import { BirdArt } from '@/BirdArt';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 
 /** Pastel tile holding a bird photo, or an illustrated bird when there's no photo. */
-export function BirdTile({ id, uri, style, artSize = 96 }: { id: number; uri?: string; style?: ViewStyle; artSize?: number }) {
+export function BirdTile({
+  id,
+  uri,
+  style,
+  artSize = 96,
+  sharedTag,
+}: {
+  id: number;
+  uri?: string;
+  style?: ViewStyle;
+  artSize?: number;
+  /** Morphs into the next screen's view with the same tag (Reanimated shared transition; APK builds only). */
+  sharedTag?: string;
+}) {
   const c = useColors();
   return (
-    <View style={[styles.tile, { backgroundColor: tileFor(c, id) }, style]}>
+    <Animated.View sharedTransitionTag={sharedTag} style={[styles.tile, { backgroundColor: tileFor(c, id) }, style]}>
       {uri ? (
         <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
       ) : (
@@ -18,7 +33,7 @@ export function BirdTile({ id, uri, style, artSize = 96 }: { id: number; uri?: s
           <BirdArt id={id} size={artSize} />
         </View>
       )}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -31,6 +46,7 @@ export function BirdCard({
   tall,
   onPress,
   prefetch,
+  sharedTag,
 }: {
   id: number;
   title: string;
@@ -40,6 +56,7 @@ export function BirdCard({
   onPress?: () => void;
   /** Photo the next screen will show: starts downloading as the finger lands, so it is there on arrival. */
   prefetch?: string;
+  sharedTag?: string;
 }) {
   const c = useColors();
   return (
@@ -51,7 +68,7 @@ export function BirdCard({
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={`${title}, ${caption}`}
     >
-      <BirdTile id={id} uri={uri} style={{ height: tall ? 158 : 128 }} artSize={tall ? 104 : 88} />
+      <BirdTile id={id} uri={uri} style={{ height: tall ? 158 : 128 }} artSize={tall ? 104 : 88} sharedTag={sharedTag} />
       <Text style={[styles.title, { color: c.ink }]} numberOfLines={2}>
         {title}
       </Text>

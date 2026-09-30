@@ -115,6 +115,7 @@ export default function Explore() {
             caption={searching ? b.scientific_name : b.family_en}
             uri={b.image ? mediaUrl(b.image.thumb_url) : undefined}
             prefetch={b.image ? mediaUrl(b.image.url) : undefined}
+            sharedTag={`species-${b.id}`}
             tall={tall}
             onPress={() => router.push(`/species/${b.id}`)}
           />
