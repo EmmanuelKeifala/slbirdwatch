@@ -24,6 +24,7 @@ export default function Sightings() {
   const [total, setTotal] = useState(0);
   const [next, setNext] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [paging, setPaging] = useState(false); // refreshing a list already on screen stays quiet
   const [error, setError] = useState<string | null>(null);
   const token = session?.token;
   const queued = useOutbox(session?.user.id);
@@ -33,6 +34,7 @@ export default function Sightings() {
     async (offset: number) => {
       if (!token) return;
       setLoading(true);
+      setPaging(offset > 0);
       setError(null);
       try {
         const page = await myObservations(token, offset);
@@ -157,7 +159,7 @@ export default function Sightings() {
           />
         )}
         footer={
-          loading ? (
+          loading && (paging || items.length === 0) ? (
             <ActivityIndicator style={{ margin: space.xl }} color={c.accent} />
           ) : error ? (
             <Pressable onPress={() => load(0)} accessibilityRole="button">

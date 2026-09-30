@@ -23,11 +23,13 @@ export function ObservationGrid({
   const [items, setItems] = useState<Observation[]>([]);
   const [next, setNext] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [paging, setPaging] = useState(false); // refreshing a list already on screen stays quiet
   const [error, setError] = useState(false);
 
   const fetchPage = useCallback(
     (offset: number) => {
       setLoading(true);
+      setPaging(offset > 0);
       setError(false);
       load(offset)
         .then((p) => {
@@ -66,7 +68,7 @@ export function ObservationGrid({
         );
       }}
       footer={
-        loading ? (
+        loading && (paging || items.length === 0) ? (
           <ActivityIndicator style={{ margin: space.xl }} color={c.accent} />
         ) : error ? (
           <Pressable onPress={() => fetchPage(0)} accessibilityRole="button">
