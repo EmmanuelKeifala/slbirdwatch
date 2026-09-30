@@ -2,7 +2,8 @@ import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { Pressable } from '@/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -119,7 +120,7 @@ export default function Learn() {
                 return (
                   <Pressable key={l.slug} onPress={() => router.push(`/lesson/${l.slug}`)} accessibilityRole="button" style={styles.lesson}>
                     {l.cover ? (
-                      <Image source={{ uri: mediaUrl(l.cover) }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                      <Image source={{ uri: mediaUrl(l.cover) }} style={StyleSheet.absoluteFill} contentFit="cover" />
                     ) : null}
                     <LinearGradient colors={['rgba(23,20,75,0.05)', 'rgba(23,20,75,0.85)']} style={StyleSheet.absoluteFill} />
                     {best !== undefined && (

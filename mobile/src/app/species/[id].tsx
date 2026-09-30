@@ -1,7 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Alert, Image, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { Pressable } from '@/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -114,6 +115,7 @@ export default function Species() {
             <HeroMedia
               id={sp.id}
               uri={heroUrl ? mediaUrl(heroUrl) : null}
+              placeholder={sp.image && heroUrl === sp.image.url ? mediaUrl(sp.image.thumb_url) : undefined}
               chips={[
                 ...(sp.gallery.some((g) => g.reference) || (sp.image && !sp.image.source_url.includes('wiki')) ? ['★ Reference photo'] : []),
                 ...(sp.region ? ['Sierra Leone bird'] : []),

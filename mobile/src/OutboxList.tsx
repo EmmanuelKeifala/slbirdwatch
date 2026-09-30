@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
-import { Alert, Image, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { discard, retryNow, type OutboxItem } from '@/outbox';
 import { Pressable } from '@/Pressable';

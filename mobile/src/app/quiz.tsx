@@ -1,7 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState, type ComponentProps } from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { Pressable } from '@/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -276,7 +277,7 @@ export default function Quiz() {
                 <Image
                   source={{ uri: mediaUrl(q.image.url) }}
                   style={styles.photo}
-                  resizeMode="cover"
+                  contentFit="cover"
                   accessibilityLabel="Bird photo to identify"
                 />
               </View>

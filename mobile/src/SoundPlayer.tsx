@@ -2,7 +2,8 @@ import { Feather } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
-import { Animated, Easing, Image, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { mediaUrl } from '@/api';
 import { Pressable } from '@/Pressable';
@@ -91,7 +92,7 @@ export function SoundPlayer({ sound, caption }: { sound: Playable; caption?: str
           accessibilityLabel="Spectrogram. Tap to jump to a moment in the recording."
         >
           {!!sound.spectrogram_url && ( // offline pack calls come without one (LIB-11)
-            <Image source={{ uri: mediaUrl(sound.spectrogram_url) }} style={StyleSheet.absoluteFill} resizeMode="stretch" />
+            <Image source={{ uri: mediaUrl(sound.spectrogram_url) }} style={StyleSheet.absoluteFill} contentFit="fill" />
           )}
           <View style={[styles.dim, { left: at }]} pointerEvents="none" />
           {status.currentTime > 0 && (

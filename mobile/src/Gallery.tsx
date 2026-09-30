@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Alert, FlatList, Image, Linking, Modal, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { Alert, FlatList, Linking, Modal, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { Pressable } from '@/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -192,7 +193,7 @@ function Viewer({
                     }
                     accessibilityLabel={placing === p.id ? 'Tap where the field mark is' : undefined}
                   >
-                    <Image source={{ uri: mediaUrl(p.url) }} style={{ width, height: h }} resizeMode="contain" />
+                    <Image source={{ uri: mediaUrl(p.url) }} style={{ width, height: h }} contentFit="contain" />
                     {showMarks &&
                       marks.map((m) => (
                         <Pressable

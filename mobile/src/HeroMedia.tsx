@@ -1,7 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState, type ComponentProps } from 'react';
-import { Animated, Image, StyleSheet, Text, View } from 'react-native';
+import type { ComponentProps } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { BirdArt } from '@/BirdArt';
 import { Pressable } from '@/Pressable';
@@ -11,26 +12,36 @@ type Icon = ComponentProps<typeof Feather>['name'];
 export type HeroAction = { icon: Icon; label: string; count?: number; onPress: () => void };
 
 /**
- * The big picture at the top of a bird or sighting page: the photo fades and settles in, a soft gradient
+ * The big picture at the top of a bird or sighting page: the cached thumbnail shows at once and the full photo fades over it, a soft gradient
  * grounds it, small frosted chips carry context, and frosted pill buttons float along the bottom.
  * Without a photo, the bird's illustration sits on its pastel tile.
  */
-export function HeroMedia({ id, uri, chips = [], actions }: { id: number; uri: string | null; chips?: string[]; actions: HeroAction[] }) {
+export function HeroMedia({
+  id,
+  uri,
+  placeholder,
+  chips = [],
+  actions,
+}: {
+  id: number;
+  uri: string | null;
+  placeholder?: string;
+  chips?: string[];
+  actions: HeroAction[];
+}) {
   const c = useColors();
-  const [shown] = useState(() => new Animated.Value(0)); // fade/settle-in progress, created once
-  const reveal = () => Animated.timing(shown, { toValue: 1, duration: 450, useNativeDriver: true }).start();
 
   return (
     <View style={[styles.card, { backgroundColor: tileFor(c, id) }]}>
       {uri ? (
-        <Animated.View
-          style={[
-            StyleSheet.absoluteFill,
-            { opacity: shown, transform: [{ scale: shown.interpolate({ inputRange: [0, 1], outputRange: [1.08, 1] }) }] },
-          ]}
-        >
-          <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" onLoad={reveal} />
-        </Animated.View>
+        <Image
+          source={{ uri }}
+          placeholder={placeholder ? { uri: placeholder } : undefined}
+          placeholderContentFit="cover"
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={200}
+        />
       ) : (
         <View style={styles.art}>
           <BirdArt id={id} size={250} />

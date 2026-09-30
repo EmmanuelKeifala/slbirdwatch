@@ -1,7 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createDuel, getDuel, mediaUrl, myDuels, scoreDuel, type Duel } from '@/api';
@@ -239,7 +240,7 @@ export default function DuelScreen() {
         ) : (
           q.image && (
             <View style={[styles.photoWrap, { backgroundColor: tileFor(c, q.answer.id) }]}>
-              <Image source={{ uri: mediaUrl(q.image.url) }} style={styles.photo} resizeMode="cover" />
+              <Image source={{ uri: mediaUrl(q.image.url) }} style={styles.photo} contentFit="cover" />
             </View>
           )
         )}

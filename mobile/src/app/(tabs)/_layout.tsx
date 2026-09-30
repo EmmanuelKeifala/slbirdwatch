@@ -1,7 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { router, Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { Pressable } from '@/Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

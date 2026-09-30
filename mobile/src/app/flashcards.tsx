@@ -1,7 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { mediaUrl, speciesCards, type FlashcardData } from '@/api';
@@ -87,7 +88,7 @@ export default function Flashcards() {
           </Text>
           <View style={[styles.photo, { backgroundColor: tileFor(c, card.speciesId) }]}>
             {bird?.image ? (
-              <Image source={{ uri: mediaUrl(bird.image) }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+              <Image source={{ uri: mediaUrl(bird.image) }} style={StyleSheet.absoluteFill} contentFit="cover" />
             ) : (
               <BirdArt id={card.speciesId} size={200} />
             )}

@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getQuiz, mediaUrl, type QuizQuestion } from '@/api';
@@ -155,7 +156,7 @@ export default function Speed() {
       <ScrollView contentContainerStyle={styles.content} scrollEnabled={false}>
         <View style={[styles.photoWrap, { backgroundColor: tileFor(c, q.answer.id) }]}>
           {q.image && (
-            <Image source={{ uri: mediaUrl(q.image.url) }} style={styles.photo} resizeMode="cover" accessibilityLabel="Bird to name" />
+            <Image source={{ uri: mediaUrl(q.image.url) }} style={styles.photo} contentFit="cover" accessibilityLabel="Bird to name" />
           )}
         </View>
         <View style={styles.grid}>

@@ -1,7 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { mediaUrl, spotGame, type SpotRound } from '@/api';
@@ -109,7 +110,7 @@ export default function Spot() {
                 accessibilityRole="button"
                 accessibilityLabel={answered ? b.english_name : `Photo ${r.birds.indexOf(b) + 1}`}
               >
-                <Image source={{ uri: mediaUrl(b.photo) }} style={styles.photo} resizeMode="cover" />
+                <Image source={{ uri: mediaUrl(b.photo) }} style={styles.photo} contentFit="cover" />
                 {answered && (
                   <View style={{ padding: space.s, gap: 2 }}>
                     <Text style={[styles.name, { color: c.ink }]} numberOfLines={2}>

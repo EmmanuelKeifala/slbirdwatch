@@ -1,4 +1,5 @@
-import { Image, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { Image } from 'expo-image';
 
 import { Pressable } from '@/Pressable';
 
@@ -11,7 +12,7 @@ export function BirdTile({ id, uri, style, artSize = 96 }: { id: number; uri?: s
   return (
     <View style={[styles.tile, { backgroundColor: tileFor(c, id) }, style]}>
       {uri ? (
-        <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
       ) : (
         <View style={styles.art}>
           <BirdArt id={id} size={artSize} />

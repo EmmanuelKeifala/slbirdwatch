@@ -2,7 +2,8 @@ import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useState, type ComponentProps } from 'react';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { mediaUrl, similarSpecies, type SimilarSpecies, type SpeciesDetail } from '@/api';
 import { seasonText } from '@/season';

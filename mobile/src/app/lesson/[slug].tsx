@@ -2,7 +2,8 @@ import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Mnemonic } from '@/Mnemonic';
@@ -81,7 +82,7 @@ export default function LessonScreen() {
               <>
                 <View style={[styles.photo, { backgroundColor: tileFor(c, item.bird.id) }]}>
                   {item.bird.image ? (
-                    <Image source={{ uri: mediaUrl(item.bird.image) }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                    <Image source={{ uri: mediaUrl(item.bird.image) }} style={StyleSheet.absoluteFill} contentFit="cover" />
                   ) : (
                     <BirdArt id={item.bird.id} size={200} />
                   )}

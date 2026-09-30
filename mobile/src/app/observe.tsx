@@ -4,7 +4,8 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { FormScroll } from '@/FormScroll';
 import { Pressable } from '@/Pressable';
@@ -379,7 +380,7 @@ export default function Observe() {
           .filter((snd) => !removedSounds.includes(snd.id))
           .map((snd) => (
             <View key={snd.id} style={s.soundRow}>
-              <Image source={{ uri: mediaUrl(snd.spectrogram_url) }} style={s.soundThumb} resizeMode="stretch" />
+              <Image source={{ uri: mediaUrl(snd.spectrogram_url) }} style={s.soundThumb} contentFit="fill" />
               <Text style={s.soundText}>{snd.duration_s.toFixed(1)} s</Text>
               <Pressable onPress={() => setRemovedSounds([...removedSounds, snd.id])} hitSlop={10} accessibilityLabel="Remove sound">
                 <Text style={s.link}>Remove</Text>
@@ -389,7 +390,7 @@ export default function Observe() {
         {sounds.map((snd, i) => (
           <View key={snd.uri + i} style={s.soundRow}>
             {snd.spectrogram ? (
-              <Image source={{ uri: snd.spectrogram }} style={s.soundThumb} resizeMode="stretch" />
+              <Image source={{ uri: snd.spectrogram }} style={s.soundThumb} contentFit="fill" />
             ) : (
               <View style={[s.soundThumb, { alignItems: 'center', justifyContent: 'center', backgroundColor: c.tint }]}>
                 <Feather name="mic" size={18} color={c.tintIcon} />

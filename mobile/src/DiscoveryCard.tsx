@@ -1,5 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import type { Observation } from '@/api';
 import { BirdArt } from '@/BirdArt';
@@ -38,7 +39,7 @@ export function DiscoveryCard({
     >
       {uri ? (
         <>
-          <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
           <LinearGradient colors={['rgba(23,20,75,0)', 'rgba(23,20,75,0.72)']} style={styles.fade} pointerEvents="none" />
         </>
       ) : (

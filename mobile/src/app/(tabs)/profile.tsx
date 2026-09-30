@@ -2,7 +2,8 @@ import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState, type ComponentProps, type ReactNode } from 'react';
-import { ActivityIndicator, Alert, Image, Linking, ScrollView, Share, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, ScrollView, Share, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FormScroll } from '@/FormScroll';

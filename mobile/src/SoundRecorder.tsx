@@ -10,7 +10,8 @@ import {
 } from 'expo-audio';
 import * as DocumentPicker from 'expo-document-picker';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { Pressable } from '@/Pressable';
 
@@ -181,7 +182,7 @@ function TrimEditor({ sound, onDone, onCancel }: { sound: Loaded; onDone: (t: Tr
         }}
         accessibilityLabel={`Selection ${fmt(trim.start)} to ${fmt(trim.end)}`}
       >
-        <Image source={{ uri: sound.spectrogram }} style={StyleSheet.absoluteFill} resizeMode="stretch" />
+        <Image source={{ uri: sound.spectrogram }} style={StyleSheet.absoluteFill} contentFit="fill" />
         <View pointerEvents="none" style={[styles.shade, { left: 0, width: x(trim.start) }]} />
         <View pointerEvents="none" style={[styles.shade, { left: x(trim.end), right: 0 }]} />
         <View pointerEvents="none" style={[styles.handle, { left: x(trim.start) - 2 }]} />
