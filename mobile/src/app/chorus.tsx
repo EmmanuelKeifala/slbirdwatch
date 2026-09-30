@@ -10,6 +10,7 @@ import { close } from '@/nav';
 import { Pressable } from '@/Pressable';
 import { saveQuiz } from '@/quizStore';
 import { font, radius, space, useColors } from '@/theme';
+import { answerFeel } from '@/haptics';
 
 /** QZ-10 dawn chorus: two or three songs at once; tick every bird you hear. */
 export default function Chorus() {
@@ -109,6 +110,7 @@ export default function Chorus() {
   const answerIds = round.answer.map((a) => a.id);
   const check = () => {
     const all = answerIds.every((id) => ticked.includes(id)) && ticked.every((id) => answerIds.includes(id));
+    answerFeel(all);
     if (all) setScore(score + 1);
     for (const id of answerIds) results.current.push({ speciesId: id, correct: ticked.includes(id) });
     setChecked(true);

@@ -12,6 +12,7 @@ import { close, signInFirst } from '@/nav';
 import { Pressable } from '@/Pressable';
 import { SoundPlayer } from '@/SoundPlayer';
 import { font, radius, space, tileFor, useColors } from '@/theme';
+import { answerFeel } from '@/haptics';
 
 /** QZ-11 head-to-head: make a challenge or enter a friend's code, play the same 10 questions, compare. */
 export default function DuelScreen() {
@@ -212,6 +213,7 @@ export default function DuelScreen() {
     if (answered) return;
     if (!started.current) started.current = at;
     setPicked(id);
+    answerFeel(id === q.answer.id);
     setPicks([...picks, id]);
   };
   const next = (at: number) => {

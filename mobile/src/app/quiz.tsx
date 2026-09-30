@@ -20,6 +20,7 @@ import { currentStats, saveQuiz } from '@/quizStore';
 import { SoundPlayer } from '@/SoundPlayer';
 import { accuracy, type QuizStats } from '@/stats';
 import { font, radius, space, tileFor, useColors } from '@/theme';
+import { answerFeel } from '@/haptics';
 
 // QZ-03
 const LEVELS: { level: QuizLevel; label: string; hint: string }[] = [
@@ -174,6 +175,7 @@ export default function Quiz() {
   function choose(id: number) {
     if (answered) return;
     setPicked(id);
+    answerFeel(id === q.answer.id);
     setResults([...results, { speciesId: q.answer.id, correct: id === q.answer.id }]);
   }
 
@@ -181,6 +183,7 @@ export default function Quiz() {
     if (answered || typed.trim().length < 3) return;
     const v = matchName(typed, [q.answer.english_name, q.answer.scientific_name]);
     setVerdict(v);
+    answerFeel(v !== 'wrong');
     setResults([...results, { speciesId: q.answer.id, correct: v !== 'wrong' }]);
   }
 

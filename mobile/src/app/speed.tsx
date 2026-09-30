@@ -11,6 +11,7 @@ import { close } from '@/nav';
 import { Pressable } from '@/Pressable';
 import { saveQuiz } from '@/quizStore';
 import { font, radius, space, tileFor, useColors } from '@/theme';
+import { answerFeel } from '@/haptics';
 
 const SECONDS = 60;
 const PENALTY = 3; // seconds off for a wrong answer
@@ -64,6 +65,7 @@ export default function Speed() {
     if (!questions || flash) return;
     const q = questions[i];
     const right = id === q.answer.id;
+    answerFeel(right);
     results.current.push({ speciesId: q.answer.id, correct: right });
     if (right) {
       scoreRef.current += 1;

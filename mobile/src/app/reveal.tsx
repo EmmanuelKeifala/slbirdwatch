@@ -11,6 +11,7 @@ import { close } from '@/nav';
 import { Pressable } from '@/Pressable';
 import { saveQuiz } from '@/quizStore';
 import { font, radius, space, tileFor, useColors } from '@/theme';
+import { answerFeel } from '@/haptics';
 
 // Zoom per stage: a close crop first, the whole photo last. Points for a right answer at each stage.
 const ZOOM = [3.2, 2.2, 1.5, 1];
@@ -104,6 +105,7 @@ export default function Reveal() {
     if (answered) return;
     setPicked(id);
     const ok = id === q.answer.id;
+    answerFeel(ok);
     results.current.push({ speciesId: q.answer.id, correct: ok });
     if (ok) setScore(score + POINTS[stage]);
   };

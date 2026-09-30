@@ -9,6 +9,7 @@ import { mediaUrl, spotGame, type SpotRound } from '@/api';
 import { close } from '@/nav';
 import { Pressable } from '@/Pressable';
 import { font, radius, space, useColors } from '@/theme';
+import { answerFeel } from '@/haptics';
 
 /** QZ-07 "Spot the difference": two lookalikes side by side; tap the named one, then learn how to tell them apart. */
 export default function Spot() {
@@ -80,6 +81,7 @@ export default function Spot() {
   const choose = (id: number) => {
     if (answered) return;
     setPicked(id);
+    answerFeel(id === r.target.id);
     if (id === r.target.id) setScore(score + 1);
   };
 
