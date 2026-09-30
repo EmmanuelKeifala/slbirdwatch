@@ -7,7 +7,7 @@ import { Image } from 'expo-image';
 import { Pressable } from '@/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getSpecies, isAdmin, mediaUrl, sightingsMap, speciesPhotos, type CommunityPhoto, type MapSquare, type SpeciesDetail } from '@/api';
+import { cachedSpecies, getSpecies, isAdmin, knownSpecies, mediaUrl, sightingsMap, speciesPhotos, type CommunityPhoto, type MapSquare, type SpeciesDetail } from '@/api';
 import { useAuth } from '@/auth';
 import { languageLabel } from '@/languages';
 import { LICENCES } from '@/licences';
@@ -35,7 +35,8 @@ export default function Species() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
   const token = session?.token;
-  const [sp, setSp] = useState<SpeciesDetail | null>(null);
+  const [sp, setSp] = useState<SpeciesDetail | null>(() => cachedSpecies(Number(id)) ?? null);
+  const primed = knownSpecies.get(Number(id)); // from the list you tapped: name and thumbnail while details load
   const [error, setError] = useState<string | null>(null);
   const [photos, setPhotos] = useState<CommunityPhoto[]>([]);
   const [squares, setSquares] = useState<MapSquare[]>([]);
@@ -79,7 +80,7 @@ export default function Species() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
       <ScreenHeader
-        title={sp?.english_name ?? ''}
+        title={sp?.english_name ?? primed?.english_name ?? ''}
         back
         right={
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.l }}>
@@ -102,11 +103,14 @@ export default function Species() {
         }
       />
       {!sp ? (
-        <View style={styles.center}>
+        <View style={primed ? undefined : styles.center}>
+          {primed && (
+            <HeroMedia id={primed.id} uri={primed.image ? mediaUrl(primed.image.thumb_url) : null} actions={[]} />
+          )}
           {error ? (
-            <Text style={[styles.body, { color: c.wrong }]}>Couldn’t load this bird. Check your connection.</Text>
+            <Text style={[styles.body, { color: c.wrong, margin: space.xl }]}>Couldn’t load this bird. Check your connection.</Text>
           ) : (
-            <ActivityIndicator color={c.accent} />
+            <ActivityIndicator style={{ margin: space.xl }} color={c.accent} />
           )}
         </View>
       ) : (

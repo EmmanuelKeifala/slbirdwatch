@@ -41,8 +41,15 @@ export async function listSpecies(params: { q?: string; offset?: number } & Brow
   if (params.near) qs.set('near', `${params.near.lat},${params.near.lng}`);
   const res = await fetch(`${API_URL}/species?${qs}`, { signal });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return (await res.json()) as Page<Species>;
+  const page = (await res.json()) as Page<Species>;
+  for (const s of page.items) knownSpecies.set(s.id, s);
+  return page;
 }
+
+// Birds already fetched this session: a bird page opens with its name and photo at once, and instantly on a revisit.
+export const knownSpecies = new Map<number, Species>();
+const speciesDetails = new Map<number, SpeciesDetail>();
+export const cachedSpecies = (id: number) => speciesDetails.get(id);
 
 export type Role = 'member' | 'trusted' | 'verifier' | 'moderator' | 'admin';
 export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
@@ -568,7 +575,11 @@ export type GalleryPhoto = {
   source_url: string;
 };
 
-export const getSpecies = (id: number) => request<SpeciesDetail>(`/species/${id}`);
+export async function getSpecies(id: number) {
+  const d = await request<SpeciesDetail>(`/species/${id}`);
+  speciesDetails.set(id, d);
+  return d;
+}
 
 export const getObservation = (id: number, token?: string) => request<Observation>(`/observations/${id}`, { token });
 

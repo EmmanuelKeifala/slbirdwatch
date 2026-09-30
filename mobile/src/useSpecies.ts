@@ -1,12 +1,26 @@
+import { File, Paths } from 'expo-file-system';
 import { useEffect, useRef, useState } from 'react';
 
 import { listSpecies, type BrowseFilters, type Species } from '@/api';
 import { packInfo, packSearch } from '@/offlinePack';
 
+// The library's opening page, kept on the phone so the app opens straight onto birds (then refreshes).
+const firstPage = () => new File(Paths.cache, 'library-first-page.json');
+function readFirstPage(): Species[] {
+  try {
+    const f = firstPage();
+    return f.exists ? (JSON.parse(f.textSync()) as Species[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Paged species list for a query + filters (debounced 300 ms); `more()` loads the next page. */
 export function useSpecies(query: string, filters: BrowseFilters = {}) {
   const key = JSON.stringify(filters); // stable dependency for the filter object
-  const [items, setItems] = useState<Species[]>([]);
+  const browsing = !query.trim() && key === '{}';
+  const [items, setItems] = useState<Species[]>(() => (browsing ? readFirstPage() : []));
+  const typed = useRef(false); // the first load runs at once; only typing is debounced
   const [next, setNext] = useState<number | null>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +35,11 @@ export function useSpecies(query: string, filters: BrowseFilters = {}) {
     try {
       const page = await listSpecies({ q, offset, ...filters }, ctrl.signal);
       setItems((prev) => (offset === 0 ? page.items : [...prev, ...page.items]));
+      if (offset === 0 && !q && JSON.stringify(filters) === '{}') {
+        try {
+          firstPage().write(JSON.stringify(page.items));
+        } catch {}
+      }
       setOffline(false);
       setNext(page.next_offset);
     } catch (e) {
@@ -39,7 +58,8 @@ export function useSpecies(query: string, filters: BrowseFilters = {}) {
   }
 
   useEffect(() => {
-    const t = setTimeout(() => load(query.trim(), 0), 300);
+    const t = setTimeout(() => load(query.trim(), 0), typed.current ? 300 : 0);
+    typed.current = true;
     return () => clearTimeout(t);
     // `key` stands in for `filters`; `load` is recreated each render and reads the latest values.
     // eslint-disable-next-line react-hooks/exhaustive-deps
