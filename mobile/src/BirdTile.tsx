@@ -30,6 +30,7 @@ export function BirdCard({
   uri,
   tall,
   onPress,
+  prefetch,
 }: {
   id: number;
   title: string;
@@ -37,11 +38,14 @@ export function BirdCard({
   uri?: string;
   tall?: boolean;
   onPress?: () => void;
+  /** Photo the next screen will show: starts downloading as the finger lands, so it is there on arrival. */
+  prefetch?: string;
 }) {
   const c = useColors();
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={prefetch ? () => Image.prefetch(prefetch).catch(() => {}) : undefined}
       disabled={!onPress}
       style={({ pressed }) => [styles.card, { borderColor: c.border, backgroundColor: c.surface }, pressed && styles.pressed]}
       accessibilityRole={onPress ? 'button' : undefined}
