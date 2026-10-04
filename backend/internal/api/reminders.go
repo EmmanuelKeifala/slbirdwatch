@@ -11,7 +11,7 @@ import (
 )
 
 // NTF-02: pushes for new weekly challenges (Monday from 08:00) and streak reminders: the daily quiz streak
-// (from 18:00, when you quizzed yesterday but not yet today and the run is 2+ days) and the weekly outing
+// (from 18:00, when the run is 2+ days and alive, on its own or on a freeze, but not yet extended today) and the weekly outing
 // (Saturday from 09:00, when you went out last week but not yet this week). Times are UTC = Sierra Leone.
 // Only for people with a phone registered and reminders switched on; reminders_sent keeps each to once.
 
@@ -31,6 +31,24 @@ func (a *Server) RemindersLoop(ctx context.Context) {
 		case <-t.C:
 		}
 	}
+}
+
+// streakNudge words the evening streak reminder. The same sentence every night stops being read, so the
+// wording rotates: by day, offset per person so everyone isn't sent the same one. With no freezes left
+// tonight is the last chance, and it says so.
+func streakNudge(st streak, userID int64, today time.Time) (title, body string) {
+	n := st.Current
+	if st.Freezes == 0 {
+		return fmt.Sprintf("Your %d-day streak ends tonight", n), "No freezes left. One quick round saves it."
+	}
+	nudges := [][2]string{
+		{fmt.Sprintf("Keep your %d-day quiz streak", n), "A quick quiz today keeps it going."},
+		{fmt.Sprintf("%d days and counting", n), "One round today makes it " + fmt.Sprint(n+1) + "."},
+		{"Which bird is it?", fmt.Sprintf("Play one round to keep your %d-day streak alive.", n)},
+		{fmt.Sprintf("Day %d is one round away", n+1), "Two minutes with the birds keeps your streak."},
+	}
+	pick := nudges[(today.YearDay()+int(userID%int64(len(nudges))))%len(nudges)]
+	return pick[0], pick[1]
 }
 
 type reminder struct {
@@ -66,11 +84,11 @@ func (a *Server) runReminders(ctx context.Context, now time.Time) error {
 	}
 
 	if now.Hour() >= 18 {
-		ids, err := a.claim(ctx, "quiz_streak", today, `SELECT u.id FROM users u WHERE u.notify_reminders
+		// played within the days a full set of freezes could bridge, and not yet today
+		ids, err := a.claim(ctx, "quiz_streak", today, fmt.Sprintf(`SELECT u.id FROM users u WHERE u.notify_reminders
 			AND EXISTS (SELECT 1 FROM push_tokens p WHERE p.user_id = u.id)
-			AND EXISTS (SELECT 1 FROM quiz_days q WHERE q.user_id = u.id AND q.day = $1::date - 1)
-			AND EXISTS (SELECT 1 FROM quiz_days q WHERE q.user_id = u.id AND q.day = $1::date - 2)
-			AND NOT EXISTS (SELECT 1 FROM quiz_days q WHERE q.user_id = u.id AND q.day = $1::date)`)
+			AND EXISTS (SELECT 1 FROM quiz_days q WHERE q.user_id = u.id AND q.day >= $1::date - %d AND q.day < $1::date)
+			AND NOT EXISTS (SELECT 1 FROM quiz_days q WHERE q.user_id = u.id AND q.day = $1::date)`, maxFreezes+1))
 		if err != nil {
 			return err
 		}
@@ -79,8 +97,10 @@ func (a *Server) runReminders(ctx context.Context, now time.Time) error {
 			if err != nil {
 				return err
 			}
-			n := streaks["daily_quiz"].Current
-			out = append(out, reminder{id, fmt.Sprintf("Keep your %d-day quiz streak", n), "A quick quiz today keeps it going.", "/quiz"})
+			if st := streaks["daily_quiz"]; st.Current >= 2 { // a one-day run isn't a streak worth a push yet
+				title, body := streakNudge(st, id, today)
+				out = append(out, reminder{id, title, body, "/quiz"})
+			}
 		}
 	}
 

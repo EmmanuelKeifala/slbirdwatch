@@ -21,6 +21,46 @@ type badge struct {
 type streak struct {
 	Current int `json:"current"`
 	Best    int `json:"best"`
+	Freezes int `json:"freezes"` // daily quiz only: streak freezes held
+	Frozen  int `json:"frozen"`  // daily quiz only: missed days a freeze is covering right now
+	Bridged int `json:"bridged"` // daily quiz only: missed days a freeze covered just before the last day played
+}
+
+// Streak freezes, like the streak itself, are worked out from the days played: nothing is stored. Everyone
+// starts with maxFreezes, a missed day uses one up, and every freezeEvery days played in a run earns one back.
+const (
+	maxFreezes  = 2
+	freezeEvery = 7
+)
+
+// quizStreak is the daily quiz streak from sorted, distinct days played. A missed day uses a freeze, when
+// one is held, instead of ending the run; a frozen day keeps the run alive without adding to it. Today is
+// never "missed" until it is over, so a run whose last day was yesterday still counts.
+func quizStreak(days []time.Time, today time.Time) streak {
+	missedBefore := func(from, to time.Time) int { return max(0, int(to.Sub(from).Hours()/24)-1) }
+	s := streak{Freezes: maxFreezes}
+	run := 0
+	for i, d := range days {
+		s.Bridged = 0
+		if i > 0 && missedBefore(days[i-1], d) <= s.Freezes {
+			s.Bridged = missedBefore(days[i-1], d)
+			s.Freezes -= s.Bridged
+			run++
+		} else {
+			run = 1
+		}
+		if run%freezeEvery == 0 {
+			s.Freezes = min(maxFreezes, s.Freezes+1)
+		}
+		s.Best = max(s.Best, run)
+	}
+	if n := len(days); n > 0 {
+		if missed := missedBefore(days[n-1], today); missed <= s.Freezes {
+			s.Current, s.Frozen = run, missed
+			s.Freezes -= missed
+		}
+	}
+	return s
 }
 
 // rareRecords: a Sierra Leone bird with fewer GBIF records than this (or none) counts as rare for the badge.
@@ -117,7 +157,7 @@ func (a *Server) loadAchievements(ctx context.Context, uid int64, now time.Time)
 	}
 	rows.Close()
 	streaks := map[string]streak{
-		"daily_quiz":    runs(quizDays, day(now), func(t time.Time) time.Time { return t.AddDate(0, 0, 1) }),
+		"daily_quiz":    quizStreak(quizDays, day(now)),
 		"weekly_outing": runs(outingWeeks, week(now), func(t time.Time) time.Time { return t.AddDate(0, 0, 7) }),
 	}
 

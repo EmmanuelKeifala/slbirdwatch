@@ -13,6 +13,28 @@ import (
 	"github.com/slbirdwatch/backend/internal/database"
 )
 
+func TestStreakNudge(t *testing.T) {
+	day := func(n int) time.Time { return time.Date(2026, 1, n, 0, 0, 0, 0, time.UTC) }
+	st := streak{Current: 5, Freezes: 1}
+	seen := map[string]bool{}
+	for n := 1; n <= 4; n++ {
+		title, body := streakNudge(st, 7, day(n))
+		if title == "" || body == "" {
+			t.Fatalf("day %d: empty nudge", n)
+		}
+		seen[title] = true
+	}
+	if len(seen) != 4 { // four nights running, four different wordings
+		t.Errorf("wording repeats within four days: %v", seen)
+	}
+	if a, _ := streakNudge(st, 7, day(1)); a == func() string { b, _ := streakNudge(st, 8, day(1)); return b }() {
+		t.Errorf("two people got the same wording on the same day: %q", a)
+	}
+	if title, _ := streakNudge(streak{Current: 5}, 7, day(1)); title != "Your 5-day streak ends tonight" {
+		t.Errorf("no freezes left: %q", title)
+	}
+}
+
 func TestReminders(t *testing.T) {
 	var mu sync.Mutex
 	var sent []pushMessage
@@ -81,11 +103,21 @@ func TestReminders(t *testing.T) {
 		t.Fatalf("quiz nudge before 18:00: %v", got)
 	}
 	got := run("2020-01-08 18:30")
-	if len(got) != 1 || got[0].Data["url"] != "/quiz" || got[0].Title != "Keep your 2-day quiz streak" {
+	if wantTitle, wantBody := streakNudge(streak{Current: 2, Freezes: 2}, me, at("2020-01-08 00:00")); len(got) != 1 ||
+		got[0].Data["url"] != "/quiz" || got[0].Title != wantTitle || got[0].Body != wantBody {
 		t.Fatalf("quiz streak: %+v", got)
 	}
 	if got := run("2020-01-08 21:00"); len(got) != 0 {
 		t.Fatalf("quiz nudge twice: %v", got)
+	}
+
+	// Missed Wednesday and Thursday: both freezes are spent, so Friday's nudge says it's the last chance.
+	if got := run("2020-01-10 18:30"); len(got) != 1 || got[0].Title != "Your 2-day streak ends tonight" {
+		t.Fatalf("last chance: %+v", got)
+	}
+	// A third missed day ends the run: nothing to save, no nudge.
+	if got := run("2020-01-11 18:30"); len(got) != 0 {
+		t.Fatalf("nudge for a dead streak: %v", got)
 	}
 
 	// Out last week, not yet this week: a Saturday nudge.

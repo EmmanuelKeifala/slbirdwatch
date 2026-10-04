@@ -24,6 +24,38 @@ func TestRuns(t *testing.T) {
 	}
 }
 
+func TestQuizStreak(t *testing.T) {
+	d := func(s string) time.Time { v, _ := time.Parse("2006-01-02", s); return v }
+	days := func(ss ...string) (out []time.Time) {
+		for _, s := range ss {
+			out = append(out, d(s))
+		}
+		return
+	}
+	check := func(name string, got, want streak) {
+		t.Helper()
+		if got != want {
+			t.Errorf("%s: got %+v, want %+v", name, got, want)
+		}
+	}
+	check("no play", quizStreak(nil, d("2026-09-13")), streak{Freezes: 2})
+	// played yesterday, not yet today: nothing missed
+	check("ongoing", quizStreak(days("2026-09-10", "2026-09-11"), d("2026-09-12")), streak{Current: 2, Best: 2, Freezes: 2})
+	// one day missed in the middle: a freeze bridges it, and the frozen day doesn't count
+	check("bridged", quizStreak(days("2026-09-01", "2026-09-02", "2026-09-04"), d("2026-09-04")), streak{Current: 3, Best: 3, Freezes: 1, Bridged: 1})
+	// missed yesterday, today still open: the run is alive on a freeze
+	check("frozen now", quizStreak(days("2026-09-01", "2026-09-02"), d("2026-09-04")), streak{Current: 2, Best: 2, Freezes: 1, Frozen: 1})
+	// two missed days use both freezes; a third ends it
+	check("both used", quizStreak(days("2026-09-01", "2026-09-02"), d("2026-09-05")), streak{Current: 2, Best: 2, Freezes: 0, Frozen: 2})
+	check("broken", quizStreak(days("2026-09-01", "2026-09-02"), d("2026-09-06")), streak{Best: 2, Freezes: 2})
+	// a gap too wide for the freezes held starts a new run and leaves them unspent
+	check("new run", quizStreak(days("2026-09-01", "2026-09-10", "2026-09-11"), d("2026-09-11")), streak{Current: 2, Best: 2, Freezes: 2})
+	// a freeze spent early is earned back by the 7th day played
+	wk := days("2026-09-01", "2026-09-03", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-07")
+	check("before 7", quizStreak(wk, d("2026-09-07")), streak{Current: 6, Best: 6, Freezes: 1})
+	check("earned back", quizStreak(append(wk, d("2026-09-08")), d("2026-09-08")), streak{Current: 7, Best: 7, Freezes: 2})
+}
+
 func TestAchievements(t *testing.T) {
 	call, email := apiTest(t)
 	db := testDB(t)
@@ -61,7 +93,7 @@ func TestAchievements(t *testing.T) {
 	if b["species_10"]["progress"].(float64) != 1 || b["species_10"]["earned"] != false {
 		t.Errorf("species_10: %v", b["species_10"])
 	}
-	if q := s["daily_quiz"].(map[string]any); q["current"].(float64) != 3 || q["best"].(float64) != 3 {
+	if q := s["daily_quiz"].(map[string]any); q["current"].(float64) != 3 || q["best"].(float64) != 3 || q["freezes"].(float64) != maxFreezes {
 		t.Errorf("quiz streak: %v", q)
 	}
 	if o := s["weekly_outing"].(map[string]any); o["current"].(float64) != 2 {
