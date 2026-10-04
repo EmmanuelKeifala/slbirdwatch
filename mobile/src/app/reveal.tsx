@@ -10,7 +10,7 @@ import { bestScores, recordScore } from '@/state/gameScores';
 import { close } from '@/lib/nav';
 import { Pressable } from '@/components/Pressable';
 import { GameBar } from '@/components/GameBar';
-import { GameOver } from '@/components/GameOver';
+import { GameOver, type GameResult } from '@/components/GameOver';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
 
@@ -31,7 +31,7 @@ export default function Reveal() {
   const [score, setScore] = useState(0);
   const [record, setRecord] = useState(false);
   const [focus, setFocus] = useState<{ x: number; y: number }[]>([]); // where each crop is centred, per question
-  const results = useRef<{ speciesId: number; correct: boolean }[]>([]);
+  const results = useRef<GameResult[]>([]);
   const [game, setGame] = useState(0);
 
   useEffect(() => {
@@ -97,7 +97,7 @@ export default function Reveal() {
     setPicked(id);
     const ok = id === q.answer.id;
     answerFeel(ok);
-    results.current.push({ speciesId: q.answer.id, correct: ok });
+    results.current.push({ speciesId: q.answer.id, name: q.answer.english_name, correct: ok });
     if (ok) setScore(score + POINTS[stage]);
   };
   const next = () => {

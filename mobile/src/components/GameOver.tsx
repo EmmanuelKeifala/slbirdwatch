@@ -1,5 +1,6 @@
 import { Feather, FontAwesome } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
 import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
@@ -8,6 +9,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Confetti } from '@/components/Confetti';
 import { LevelBar } from '@/components/LevelBar';
 import { Pressable } from '@/components/Pressable';
+import { StreakBar } from '@/components/StreakBar';
+import { isMilestone } from '@/lib/goals';
 import { close, signInFirst } from '@/lib/nav';
 import { useAuth } from '@/state/auth';
 import { saveQuiz } from '@/state/quizStore';
@@ -15,11 +18,13 @@ import { roundRewards, type Rewards } from '@/state/rewards';
 import { font, radius, space, useColors } from '@/theme';
 
 type Icon = ComponentProps<typeof Feather>['name'];
-type Result = { speciesId: number; correct: boolean };
+/** One answer; `name` lets the screen list the birds to look at again. */
+export type GameResult = { speciesId: number; correct: boolean; name?: string };
 
 /**
  * The end of every game: the score counts up, stars or a "new best" land, and the round's rewards follow —
- * XP earned, the level bar filling, the daily streak, any badge just earned. It saves the round's answers
+ * XP earned, the level bar filling, the streak's progress to its next milestone, your place on this week's
+ * board, any badge just earned, and the birds you missed, a tap away. It saves the round's answers
  * itself (once), so the rewards it shows are the ones the account really got.
  */
 export function GameOver({
@@ -41,7 +46,7 @@ export function GameOver({
   record?: boolean;
   message: string;
   /** The round's answers, read once when the screen opens. */
-  results: () => Result[];
+  results: () => GameResult[];
   kind?: 'picture' | 'sound';
   onAgain?: () => void;
   children?: ReactNode;
@@ -49,19 +54,24 @@ export function GameOver({
   const c = useColors();
   const token = useAuth().session?.token;
   const [rewards, setRewards] = useState<Rewards | null>(null);
+  const [answers] = useState(results); // read once, when the screen opens
   const saved = useRef(false);
   useEffect(() => {
     if (saved.current) return;
     saved.current = true;
-    const answers = results();
     if (!answers.length) return;
     saveQuiz(answers, token, kind)
       .then(() => (token ? roundRewards(token, answers.filter((r) => r.correct).length) : null))
       .then(setRewards, () => {}); // offline: the answers stay on the phone and the plain score shows
-  }, [results, token, kind]);
+  }, [answers, token, kind]);
+  const wrong = new Map<number, string>();
+  for (const a of answers) if (!a.correct && a.name) wrong.set(a.speciesId, a.name);
+  const missed = [...wrong].slice(0, 6).map(([id, name]) => ({ id, name }));
 
   const stars = outOf ? (score >= outOf * 0.9 ? 3 : score >= outOf * 0.6 ? 2 : score > 0 ? 1 : 0) : 0;
-  const big = stars === 3 || !!record || !!rewards?.levelUp || !!rewards?.newBadges.length;
+  // the day a streak reaches 3, 7, 14, 30… and this round was the one that got it there
+  const milestone = !!rewards && rewards.firstToday && isMilestone(rewards.streak);
+  const big = stars === 3 || !!record || milestone || !!rewards?.levelUp || !!rewards?.newBadges.length;
   useEffect(() => {
     if (big) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   }, [big]);
@@ -104,12 +114,10 @@ export function GameOver({
                 <Feather name="zap" size={14} color={c.accentDeep} />
                 <Text style={[styles.pillText, { color: c.accentDeep }]}>+{rewards.gained} XP</Text>
               </View>
-              {rewards.streak > 0 && (
-                <View style={[styles.pill, { backgroundColor: c.tiles[3] }]}>
-                  <FontAwesome name="fire" size={14} color="#E8590C" />
-                  <Text style={[styles.pillText, { color: c.ink }]}>
-                    {rewards.streak}-day streak
-                  </Text>
+              {rewards.board && (
+                <View style={[styles.pill, { backgroundColor: c.tiles[4] }]}>
+                  <Feather name="bar-chart-2" size={14} color={c.ink} />
+                  <Text style={[styles.pillText, { color: c.ink }]}>#{rewards.board.rank} this week</Text>
                 </View>
               )}
             </View>
@@ -119,13 +127,21 @@ export function GameOver({
               </Animated.Text>
             )}
             <LevelBar xp={rewards.xp} gained={rewards.levelUp ? rewards.xp.xp - rewards.xp.level_at : rewards.gained} />
+            {milestone && (
+              <Animated.Text entering={ZoomIn.delay(1500).springify()} style={[styles.levelUp, { color: c.ink }]}>
+                {rewards.streak} days in a row!
+              </Animated.Text>
+            )}
+            {rewards.streak > 0 && <StreakBar days={rewards.streak} />}
+            {rewards.board?.ahead && rewards.board.ahead.gap > 0 && (
+              <Text style={[styles.note, { color: c.inkMuted }]}>
+                {rewards.board.ahead.gap} XP behind {rewards.board.ahead.name} on this week’s board.
+              </Text>
+            )}
             {rewards.capped && (
               <Text style={[styles.note, { color: c.inkMuted }]}>
                 You’ve earned all of today’s quiz XP. Keep playing for practice, or log a sighting for more.
               </Text>
-            )}
-            {rewards.streak > 0 && !rewards.capped && (
-              <Text style={[styles.note, { color: c.inkMuted }]}>Play again tomorrow to make it {rewards.streak + 1} days.</Text>
             )}
           </Animated.View>
         ) : (
@@ -153,6 +169,28 @@ export function GameOver({
             </View>
           </Animated.View>
         ))}
+
+        {missed.length > 0 && (
+          <Animated.View entering={FadeInDown.delay(900)} style={styles.missed}>
+            <Text style={[styles.missedTitle, { color: c.ink }]}>Worth another look</Text>
+            <Text style={[styles.note, { color: c.inkMuted }]}>The birds you missed. Getting one wrong, then looking it up, is how it sticks.</Text>
+            <View style={styles.chips}>
+              {missed.map((b) => (
+                <Pressable
+                  key={b.id}
+                  style={[styles.pill, { backgroundColor: c.field }]}
+                  onPress={() => router.push(`/species/${b.id}`)}
+                  accessibilityRole="link"
+                >
+                  <Text style={[styles.birdText, { color: c.ink }]} numberOfLines={1}>
+                    {b.name}
+                  </Text>
+                  <Feather name="chevron-right" size={14} color={c.inkFaint} />
+                </Pressable>
+              ))}
+            </View>
+          </Animated.View>
+        )}
 
         {children}
 
@@ -200,6 +238,9 @@ const styles = StyleSheet.create({
   pillText: { fontFamily: font.bold, fontSize: 14 },
   levelUp: { fontFamily: font.display, fontSize: 20 },
   note: { fontFamily: font.medium, fontSize: 13, lineHeight: 18 },
+  missed: { alignSelf: 'stretch', gap: space.s, marginTop: space.s },
+  missedTitle: { fontFamily: font.display, fontSize: 18 },
+  birdText: { fontFamily: font.semibold, fontSize: 13, flexShrink: 1 },
   badge: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', gap: space.m, borderRadius: radius.card, padding: space.l },
   badgeIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
   badgeKicker: { fontFamily: font.bold, fontSize: 11, letterSpacing: 1, color: '#C9C2FF' },

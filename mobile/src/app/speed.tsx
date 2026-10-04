@@ -10,7 +10,7 @@ import { bestScores, recordScore } from '@/state/gameScores';
 import { close } from '@/lib/nav';
 import { Pressable } from '@/components/Pressable';
 import { GameBar } from '@/components/GameBar';
-import { GameOver } from '@/components/GameOver';
+import { GameOver, type GameResult } from '@/components/GameOver';
 import { Combo } from '@/components/Combo';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
@@ -33,7 +33,7 @@ export default function Speed() {
   const scoreRef = useRef(0);
   const [flash, setFlash] = useState<{ id: number; right: boolean } | null>(null);
   const [record, setRecord] = useState(false);
-  const results = useRef<{ speciesId: number; correct: boolean }[]>([]);
+  const results = useRef<GameResult[]>([]);
   const [game, setGame] = useState(0);
 
   useEffect(() => {
@@ -69,7 +69,7 @@ export default function Speed() {
     const right = id === q.answer.id;
     setCombo(right ? combo + 1 : 0);
     answerFeel(right);
-    results.current.push({ speciesId: q.answer.id, correct: right });
+    results.current.push({ speciesId: q.answer.id, name: q.answer.english_name, correct: right });
     if (right) {
       scoreRef.current += 1;
       setScore(scoreRef.current);

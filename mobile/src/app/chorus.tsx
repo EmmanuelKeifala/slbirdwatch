@@ -8,7 +8,7 @@ import { chorusQuiz, mediaUrl, type ChorusRound } from '@/api';
 import { close } from '@/lib/nav';
 import { Pressable } from '@/components/Pressable';
 import { GameBar } from '@/components/GameBar';
-import { GameOver } from '@/components/GameOver';
+import { GameOver, type GameResult } from '@/components/GameOver';
 import { font, radius, space, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
 
@@ -23,7 +23,7 @@ export default function Chorus() {
   const [score, setScore] = useState(0);
   const [playing, setPlaying] = useState(false);
   const players = useRef<AudioPlayer[]>([]);
-  const results = useRef<{ speciesId: number; correct: boolean }[]>([]);
+  const results = useRef<GameResult[]>([]);
   const [pulse] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
@@ -107,7 +107,7 @@ export default function Chorus() {
     const all = answerIds.every((id) => ticked.includes(id)) && ticked.every((id) => answerIds.includes(id));
     answerFeel(all);
     if (all) setScore(score + 1);
-    for (const id of answerIds) results.current.push({ speciesId: id, correct: ticked.includes(id) });
+    for (const a of round.answer) results.current.push({ speciesId: a.id, name: a.english_name, correct: ticked.includes(a.id) });
     setChecked(true);
   };
   const next = () => {

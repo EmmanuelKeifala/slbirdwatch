@@ -19,7 +19,7 @@ import { quizLevel, quizTyping, setQuizLevel, setQuizTyping, type QuizLevel } fr
 import { currentStats } from '@/state/quizStore';
 import { SoundPlayer } from '@/components/SoundPlayer';
 import { GameBar } from '@/components/GameBar';
-import { GameOver } from '@/components/GameOver';
+import { GameOver, type GameResult } from '@/components/GameOver';
 import { Combo } from '@/components/Combo';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
@@ -70,7 +70,7 @@ export default function Quiz() {
   const [error, setError] = useState<string | null>(null);
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
-  const [results, setResults] = useState<{ speciesId: number; correct: boolean }[]>([]);
+  const [results, setResults] = useState<GameResult[]>([]);
   const [done, setDone] = useState(false);
   const [round, setRound] = useState(0);
   const { session } = useAuth();
@@ -173,7 +173,7 @@ export default function Quiz() {
     if (answered) return;
     setPicked(id);
     answerFeel(id === q.answer.id);
-    setResults([...results, { speciesId: q.answer.id, correct: id === q.answer.id }]);
+    setResults([...results, { speciesId: q.answer.id, name: q.answer.english_name, correct: id === q.answer.id }]);
   }
 
   function check() {
@@ -181,7 +181,7 @@ export default function Quiz() {
     const v = matchName(typed, [q.answer.english_name, q.answer.scientific_name]);
     setVerdict(v);
     answerFeel(v !== 'wrong');
-    setResults([...results, { speciesId: q.answer.id, correct: v !== 'wrong' }]);
+    setResults([...results, { speciesId: q.answer.id, name: q.answer.english_name, correct: v !== 'wrong' }]);
   }
 
   function next() {

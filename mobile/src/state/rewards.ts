@@ -1,6 +1,6 @@
 import { File, Paths } from 'expo-file-system';
 
-import { myAchievements, myStats, type Badge, type XP } from '@/api';
+import { leaderboard, myAchievements, myStats, type Badge, type XP } from '@/api';
 import { xpGained } from '@/lib/xp';
 
 /** What a finished round earned, for the end-of-game screen. */
@@ -16,6 +16,10 @@ export type Rewards = {
   streak: number;
   /** Badges earned since this phone last looked. */
   newBadges: Badge[];
+  /** This was today's first scoring round: the one that extended the streak. */
+  firstToday: boolean;
+  /** Place on this week's board, and the person just ahead (absent at the top, or when hidden from boards). */
+  board: { rank: number; ahead?: { name: string; gap: number } } | null;
 };
 
 // Badge keys this phone has already celebrated, so each badge is announced once.
@@ -36,7 +40,13 @@ function unseen(earned: Badge[]): Badge[] {
 
 /** Call after the round's results reached the account. `correct` = right answers in the round. */
 export async function roundRewards(token: string, correct: number): Promise<Rewards> {
-  const [stats, ach] = await Promise.all([myStats(token), myAchievements(token)]);
+  const [stats, ach, week] = await Promise.all([
+    myStats(token),
+    myAchievements(token),
+    leaderboard('week', token).catch(() => null), // the board is a bonus: the rewards show without it
+  ]);
+  const mine = week?.items.findIndex((r) => r.me) ?? -1;
+  const above = mine > 0 ? week!.items[mine - 1] : undefined;
   const xp = stats.xp;
   const rule = xp.rules.find((r) => r.key === 'quiz');
   const cap = rule?.per_day || Infinity;
@@ -49,5 +59,10 @@ export async function roundRewards(token: string, correct: number): Promise<Rewa
     xp,
     streak: ach.streaks.daily_quiz.current,
     newBadges: unseen(ach.badges.filter((b) => b.earned)),
+    firstToday: correct > 0 && today - correct <= 0,
+    board:
+      mine < 0
+        ? null
+        : { rank: week!.items[mine].rank, ahead: above && { name: above.user.display_name, gap: above.xp - week!.items[mine].xp } },
   };
 }

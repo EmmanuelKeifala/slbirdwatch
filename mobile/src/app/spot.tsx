@@ -9,7 +9,7 @@ import { mediaUrl, spotGame, type SpotRound } from '@/api';
 import { close } from '@/lib/nav';
 import { Pressable } from '@/components/Pressable';
 import { GameBar } from '@/components/GameBar';
-import { GameOver } from '@/components/GameOver';
+import { GameOver, type GameResult } from '@/components/GameOver';
 import { font, radius, space, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
 
@@ -21,7 +21,7 @@ export default function Spot() {
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [score, setScore] = useState(0);
-  const results = useRef<{ speciesId: number; correct: boolean }[]>([]);
+  const results = useRef<GameResult[]>([]);
   const [game, setGame] = useState(0);
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function Spot() {
     if (answered) return;
     setPicked(id);
     answerFeel(id === r.target.id);
-    results.current.push({ speciesId: r.target.id, correct: id === r.target.id });
+    results.current.push({ speciesId: r.target.id, name: r.target.english_name, correct: id === r.target.id });
     if (id === r.target.id) setScore(score + 1);
   };
 
