@@ -20,6 +20,7 @@ import { currentStats } from '@/state/quizStore';
 import { SoundPlayer } from '@/components/SoundPlayer';
 import { GameBar } from '@/components/GameBar';
 import { GameOver } from '@/components/GameOver';
+import { Combo } from '@/components/Combo';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
 
@@ -211,6 +212,7 @@ export default function Quiz() {
           <View style={[styles.fill, { backgroundColor: c.accent, width: `${((i + (answered ? 1 : 0)) / questions.length) * 100}%` }]} />
         </View>
       </GameBar>
+      <Combo n={results.length - 1 - results.findLastIndex((r) => !r.correct)} />
 
       <FormScroll contentContainerStyle={styles.content}>
         <Text style={[styles.question, { color: c.ink }]} accessibilityRole="header">

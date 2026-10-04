@@ -11,6 +11,7 @@ import { close } from '@/lib/nav';
 import { Pressable } from '@/components/Pressable';
 import { GameBar } from '@/components/GameBar';
 import { GameOver } from '@/components/GameOver';
+import { Combo } from '@/components/Combo';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
 
@@ -27,6 +28,7 @@ export default function Speed() {
   const [left, setLeft] = useState(SECONDS);
   const [i, setI] = useState(0);
   const [score, setScore] = useState(0);
+  const [combo, setCombo] = useState(0); // right answers in a row
   const endAt = useRef(0); // the clock runs from an end time, so penalties just move it
   const scoreRef = useRef(0);
   const [flash, setFlash] = useState<{ id: number; right: boolean } | null>(null);
@@ -65,6 +67,7 @@ export default function Speed() {
     if (!questions || flash) return;
     const q = questions[i];
     const right = id === q.answer.id;
+    setCombo(right ? combo + 1 : 0);
     answerFeel(right);
     results.current.push({ speciesId: q.answer.id, correct: right });
     if (right) {
@@ -82,6 +85,7 @@ export default function Speed() {
     ); // a wrong answer shows the right one a little longer
   };
   const again = () => {
+    setCombo(0);
     results.current = [];
     scoreRef.current = 0;
     setQuestions(null);
@@ -161,6 +165,7 @@ export default function Speed() {
           <View style={[styles.fill, { backgroundColor: left <= 10 ? c.wrong : c.accent, width: `${(100 * left) / SECONDS}%` }]} />
         </View>
       </GameBar>
+      <Combo n={combo} />
       <ScrollView contentContainerStyle={styles.content} scrollEnabled={false}>
         <View style={[styles.photoWrap, { backgroundColor: tileFor(c, q.answer.id) }]}>
           {q.image && (
