@@ -11,11 +11,12 @@ import { Games } from '@/components/Games';
 import { signInFirst } from '@/lib/nav';
 import { Pressable } from '@/components/Pressable';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { PlayerCard } from '@/components/PlayerCard';
 import { font, radius, space, useColors } from '@/theme';
 
 type Icon = ComponentProps<typeof Feather>['name'];
 
-/** The fun side, in one tab: the seasonal event, this week's challenges, the games, the board and your badges. */
+/** The fun side, in one tab: where you stand, the seasonal event, this week's challenges, the games, the board and your badges. */
 export default function GamesTab() {
   const c = useColors();
   const { session } = useAuth();
@@ -35,6 +36,7 @@ export default function GamesTab() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['top']}>
       <ScreenHeader title="Games" />
       <ScrollView contentContainerStyle={styles.content}>
+        <PlayerCard token={session?.token} />
         <EventBanner token={session?.token} />
         <Challenges token={session?.token} />
         <Games />
