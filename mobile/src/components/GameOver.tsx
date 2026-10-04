@@ -132,7 +132,12 @@ export function GameOver({
                 {rewards.streak} days in a row!
               </Animated.Text>
             )}
-            {rewards.streak > 0 && <StreakBar days={rewards.streak} />}
+            {rewards.streak > 0 && <StreakBar days={rewards.streak} freezes={rewards.freezes} />}
+            {rewards.saved && (
+              <Text style={[styles.note, { color: c.inkMuted }]}>
+                A streak freeze covered the day you missed, so your streak carried on. Play 7 days to earn it back.
+              </Text>
+            )}
             {rewards.board?.ahead && rewards.board.ahead.gap > 0 && (
               <Text style={[styles.note, { color: c.inkMuted }]}>
                 {rewards.board.ahead.gap} XP behind {rewards.board.ahead.name} on this week’s board.

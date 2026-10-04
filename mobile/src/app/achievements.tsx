@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState, type ComponentProps } from 'react';
@@ -34,6 +34,16 @@ export default function Achievements() {
           <View style={styles.streaks}>
             <StreakCard icon="zap" title="Daily quiz" unit="day" s={data.streaks.daily_quiz} hint="Do a quiz today to keep it going" />
             <StreakCard icon="map" title="Weekly outing" unit="week" s={data.streaks.weekly_outing} hint="Log an outing this week" />
+          </View>
+
+          <View style={[styles.freezes, { backgroundColor: c.tiles[4] }]}>
+            <FontAwesome name="snowflake-o" size={18} color="#2B7FC2" />
+            <Text style={[styles.freezesText, { color: c.ink }]}>
+              {data.streaks.daily_quiz.freezes} streak freeze{data.streaks.daily_quiz.freezes === 1 ? '' : 's'}.{' '}
+              <Text style={{ fontFamily: font.medium, color: c.inkMuted }}>
+                Miss a day and one is used instead of ending your quiz streak. Every 7 days played earns one back, up to 2.
+              </Text>
+            </Text>
           </View>
 
           <Text style={[styles.h2, { color: c.ink }]}>
@@ -111,6 +121,8 @@ const styles = StyleSheet.create({
   streakTitle: { fontFamily: font.bold, fontSize: 14 },
   streakHint: { fontFamily: font.medium, fontSize: 12 },
   h2: { fontFamily: font.display, fontSize: 22 },
+  freezes: { flexDirection: 'row', alignItems: 'center', gap: space.m, borderRadius: radius.tile, padding: space.m },
+  freezesText: { flex: 1, fontFamily: font.bold, fontSize: 13, lineHeight: 19 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.m },
   badge: { width: '47%', flexGrow: 1, borderWidth: 1.5, borderRadius: radius.card, padding: space.m, gap: 4 },
   medal: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },

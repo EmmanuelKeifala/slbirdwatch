@@ -4,7 +4,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { myAchievements, myStats, type XP } from '@/api';
+import { myAchievements, myStats, type Streak, type XP } from '@/api';
 import { LevelBar } from '@/components/LevelBar';
 import { Pressable } from '@/components/Pressable';
 import { StreakBar } from '@/components/StreakBar';
@@ -18,12 +18,12 @@ import { font, radius, space, useColors } from '@/theme';
  */
 export function PlayerCard({ token }: { token?: string }) {
   const c = useColors();
-  const [data, setData] = useState<{ xp: XP; streak: number } | null>(null);
+  const [data, setData] = useState<{ xp: XP; streak: Streak } | null>(null);
   useFocusEffect(
     useCallback(() => {
       if (!token) return setData(null);
       Promise.all([myStats(token), myAchievements(token)]).then(
-        ([s, a]) => setData({ xp: s.xp, streak: a.streaks.daily_quiz.current }),
+        ([s, a]) => setData({ xp: s.xp, streak: a.streaks.daily_quiz }),
         () => {},
       );
     }, [token]),
@@ -49,7 +49,7 @@ export function PlayerCard({ token }: { token?: string }) {
     <Pressable onPress={() => router.push('/achievements')} accessibilityRole="button" accessibilityHint="Opens badges and streaks">
       <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.card}>
         <LevelBar xp={xp} light />
-        <StreakBar days={streak} lit={today > 0} light />
+        <StreakBar days={streak.current} lit={today > 0} light freezes={streak.freezes} />
         <View style={styles.goal} accessible accessibilityLabel={`Today's goal: ${Math.min(today, DAILY_GOAL)} of ${DAILY_GOAL} right answers`}>
           <Feather name={done ? 'check-circle' : 'target'} size={16} color="#FFFFFF" />
           <Text style={styles.goalText}>
@@ -57,9 +57,11 @@ export function PlayerCard({ token }: { token?: string }) {
               ? 'Today’s goal done. See you tomorrow!'
               : today
                 ? `${DAILY_GOAL - today} more right answers to finish today’s goal`
-                : streak
-                  ? `One round today keeps your streak. Today’s goal: ${DAILY_GOAL} right answers`
-                  : `One round today starts a streak. Today’s goal: ${DAILY_GOAL} right answers`}
+                : streak.frozen
+                  ? `A freeze is holding your streak. One round today keeps it going`
+                  : streak.current
+                    ? `One round today keeps your streak. Today’s goal: ${DAILY_GOAL} right answers`
+                    : `One round today starts a streak. Today’s goal: ${DAILY_GOAL} right answers`}
           </Text>
           <View style={styles.dots}>
             {Array.from({ length: DAILY_GOAL }, (_, k) => (

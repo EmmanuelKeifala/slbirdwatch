@@ -14,6 +14,10 @@ export type Rewards = {
   xp: XP;
   /** Daily quiz streak, in days, counting today. */
   streak: number;
+  /** Streak freezes held. */
+  freezes: number;
+  /** This round came after a missed day that a freeze covered: the streak would have ended without it. */
+  saved: boolean;
   /** Badges earned since this phone last looked. */
   newBadges: Badge[];
   /** This was today's first scoring round: the one that extended the streak. */
@@ -52,6 +56,7 @@ export async function roundRewards(token: string, correct: number): Promise<Rewa
   const cap = rule?.per_day || Infinity;
   const today = xp.today.quiz ?? 0; // right answers today, before the cap
   const gained = xpGained(today, correct, cap, rule?.points);
+  const firstToday = correct > 0 && today - correct <= 0;
   return {
     gained,
     capped: today >= cap,
@@ -59,7 +64,9 @@ export async function roundRewards(token: string, correct: number): Promise<Rewa
     xp,
     streak: ach.streaks.daily_quiz.current,
     newBadges: unseen(ach.badges.filter((b) => b.earned)),
-    firstToday: correct > 0 && today - correct <= 0,
+    firstToday,
+    freezes: ach.streaks.daily_quiz.freezes,
+    saved: firstToday && ach.streaks.daily_quiz.bridged > 0,
     board:
       mine < 0
         ? null

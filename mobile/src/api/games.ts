@@ -33,7 +33,16 @@ export const leaderboard = (scope: 'week' | 'near', token?: string, near?: { lat
 
 /** GAM-03 badges and GAM-04 streaks (current run ends today/this week or the one before). */
 export type Badge = { key: string; name: string; description: string; icon: string; progress: number; goal: number; earned: boolean };
-export type Streak = { current: number; best: number };
+export type Streak = {
+  current: number;
+  best: number;
+  /** Daily quiz only: streak freezes held (0–2). A missed day uses one instead of ending the streak. */
+  freezes: number;
+  /** Daily quiz only: missed days a freeze is covering right now. */
+  frozen: number;
+  /** Daily quiz only: missed days a freeze covered just before the last day played. */
+  bridged: number;
+};
 export const myAchievements = (token: string) =>
   request<{ badges: Badge[]; earned: number; streaks: { daily_quiz: Streak; weekly_outing: Streak } }>('/me/achievements', { token });
 
