@@ -16,10 +16,10 @@ import { matchName } from '@/lib/fuzzy';
 import { recordLesson } from '@/state/lessonStore';
 import { lookups } from '@/state/lookups';
 import { quizLevel, quizTyping, setQuizLevel, setQuizTyping, type QuizLevel } from '@/state/quizLevel';
-import { currentStats, saveQuiz } from '@/state/quizStore';
+import { currentStats } from '@/state/quizStore';
 import { SoundPlayer } from '@/components/SoundPlayer';
 import { GameBar } from '@/components/GameBar';
-import { accuracy, type QuizStats } from '@/lib/stats';
+import { GameOver } from '@/components/GameOver';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
 
@@ -70,7 +70,7 @@ export default function Quiz() {
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [results, setResults] = useState<{ speciesId: number; correct: boolean }[]>([]);
-  const [done, setDone] = useState<QuizStats | null>(null);
+  const [done, setDone] = useState(false);
   const [round, setRound] = useState(0);
   const { session } = useAuth();
   const [hidden, setHidden] = useState<string[]>([]); // media refs a verifier pulled from quizzes this round
@@ -110,7 +110,7 @@ export default function Quiz() {
     setTyped('');
     setVerdict(null);
     setResults([]);
-    setDone(null);
+    setDone(false);
     setRound(round + 1);
   }
 
@@ -149,22 +149,17 @@ export default function Quiz() {
   if (done) {
     const right = results.filter((r) => r.correct).length;
     return (
-      <Centered>
-        <Text style={[styles.count, { color: c.inkMuted }]}>{LEVELS.find((l) => l.level === level)?.label} round</Text>
-        <Text style={[styles.big, { color: c.ink }]}>
-          {right} / {results.length}
-        </Text>
-        <Text style={[styles.body, { color: c.inkMuted, textAlign: 'center' }]}>
-          {right === results.length ? 'Perfect round!' : right >= results.length * 0.7 ? 'Sharp eyes.' : 'Keep practising, it adds up.'}
-          {'\n'}Overall accuracy {accuracy(done)}% · best streak {done.bestStreak}
-        </Text>
-        <Pressable style={[styles.primary, { backgroundColor: c.primary }]} onPress={restart} accessibilityRole="button">
-          <Text style={[styles.primaryText, { color: c.onPrimary }]}>Play again</Text>
-        </Pressable>
-        <Pressable onPress={close} accessibilityRole="button">
-          <Text style={[styles.link, { color: c.inkMuted }]}>Done</Text>
-        </Pressable>
-      </Centered>
+      <GameOver
+        icon={sound ? 'music' : 'image'}
+        score={right}
+        outOf={results.length}
+        message={`${LEVELS.find((l) => l.level === level)?.label} round. ${
+          right === results.length ? 'Perfect!' : right >= results.length * 0.7 ? 'Sharp eyes.' : 'Keep practising, it adds up.'
+        }`}
+        results={() => results}
+        kind={sound ? 'sound' : 'picture'}
+        onAgain={restart}
+      />
     );
   }
 
@@ -197,7 +192,7 @@ export default function Quiz() {
     } else {
       addToDeck(results.filter((r) => !r.correct).map((r) => r.speciesId)); // LRN-04: misses become flashcards
       if (lesson && results.length) recordLesson(lesson, Math.round((100 * results.filter((r) => r.correct).length) / results.length));
-      saveQuiz(results, session?.token, sound ? 'sound' : 'picture').then(setDone);
+      setDone(true);
     }
   }
 

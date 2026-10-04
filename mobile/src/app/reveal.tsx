@@ -10,7 +10,7 @@ import { bestScores, recordScore } from '@/state/gameScores';
 import { close } from '@/lib/nav';
 import { Pressable } from '@/components/Pressable';
 import { GameBar } from '@/components/GameBar';
-import { saveQuiz } from '@/state/quizStore';
+import { GameOver } from '@/components/GameOver';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
 
@@ -66,34 +66,24 @@ export default function Reveal() {
     );
   }
   if (i >= questions.length) {
-    const best = bestScores().reveal ?? score;
     return (
-      <SafeAreaView style={[styles.center, { backgroundColor: c.bg }]}>
-        <Feather name="eye" size={40} color={c.accent} />
-        <Text style={[styles.big, { color: c.ink }]}>{score}</Text>
-        <Text style={[styles.body, { color: c.inkMuted }]}>
-          points of {questions.length * POINTS[0]} · {record ? 'a new best!' : `your best: ${best}`}
-        </Text>
-        <Pressable
-          style={[styles.primary, { backgroundColor: c.primary }]}
-          onPress={() => {
-            results.current = [];
-            setQuestions(null);
-            setI(0);
-            setStage(0);
-            setPicked(null);
-            setScore(0);
-            setRecord(false);
-            setGame(game + 1);
-          }}
-          accessibilityRole="button"
-        >
-          <Text style={[styles.primaryText, { color: c.onPrimary }]}>Play again</Text>
-        </Pressable>
-        <Pressable onPress={close} accessibilityRole="button">
-          <Text style={[styles.link, { color: c.inkMuted }]}>Done</Text>
-        </Pressable>
-      </SafeAreaView>
+      <GameOver
+        icon="eye"
+        score={score}
+        record={record}
+        message={`points of ${questions.length * POINTS[0]}${record ? '' : ` · your best: ${bestScores().reveal ?? score}`}`}
+        results={() => results.current}
+        onAgain={() => {
+          results.current = [];
+          setQuestions(null);
+          setI(0);
+          setStage(0);
+          setPicked(null);
+          setScore(0);
+          setRecord(false);
+          setGame(game + 1);
+        }}
+      />
     );
   }
 
@@ -114,7 +104,6 @@ export default function Reveal() {
     const done = i + 1 >= questions.length;
     if (done) {
       setRecord(recordScore('reveal', score));
-      saveQuiz(results.current, session?.token, 'picture').catch(() => {});
     }
     setI(i + 1);
     setStage(0);

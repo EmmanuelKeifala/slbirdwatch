@@ -10,7 +10,7 @@ import { bestScores, recordScore } from '@/state/gameScores';
 import { close } from '@/lib/nav';
 import { Pressable } from '@/components/Pressable';
 import { GameBar } from '@/components/GameBar';
-import { saveQuiz } from '@/state/quizStore';
+import { GameOver } from '@/components/GameOver';
 import { font, radius, space, tileFor, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
 
@@ -45,7 +45,6 @@ export default function Speed() {
   const finish = () => {
     setState('over');
     setRecord(recordScore('speed', scoreRef.current));
-    if (results.current.length) saveQuiz(results.current, session?.token, 'picture').catch(() => {});
   };
   const start = () => {
     endAt.current = Date.now() + SECONDS * 1000;
@@ -60,7 +59,7 @@ export default function Speed() {
       if (s === 0) finish();
     }, 250);
     return () => clearInterval(t);
-  }, [state]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state]);
 
   const answer = (id: number) => {
     if (!questions || flash) return;
@@ -104,32 +103,35 @@ export default function Speed() {
       </SafeAreaView>
     );
   }
+  if (state === 'over') {
+    return (
+      <GameOver
+        icon="zap"
+        score={score}
+        record={record}
+        message={record ? `birds named in ${SECONDS} seconds.` : `birds named in ${SECONDS} seconds · your best: ${bestScores().speed ?? score}`}
+        results={() => results.current}
+        onAgain={again}
+      />
+    );
+  }
   if (state !== 'playing') {
     return (
       <SafeAreaView style={[styles.center, { backgroundColor: c.bg }]}>
         <Feather name="zap" size={40} color={c.accent} />
-        {state === 'over' ? (
-          <>
-            <Text style={[styles.big, { color: c.ink }]}>{score}</Text>
-            <Text style={[styles.body, { color: c.inkMuted }]}>{record ? 'A new best!' : `Your best: ${bestScores().speed ?? score}`}</Text>
-          </>
-        ) : (
-          <>
-            <Text style={[styles.title, { color: c.ink }]}>Speed round</Text>
-            <Text style={[styles.body, { color: c.inkMuted }]}>
-              Name as many birds as you can in {SECONDS} seconds. A wrong answer costs {PENALTY} seconds.
-              {bestScores().speed ? `\nYour best: ${bestScores().speed}` : ''}
-            </Text>
-          </>
-        )}
+        <Text style={[styles.title, { color: c.ink }]}>Speed round</Text>
+        <Text style={[styles.body, { color: c.inkMuted }]}>
+          Name as many birds as you can in {SECONDS} seconds. A wrong answer costs {PENALTY} seconds.
+          {bestScores().speed ? `\nYour best: ${bestScores().speed}` : ''}
+        </Text>
         <Pressable
           style={[styles.primary, { backgroundColor: c.primary }, !questions && { opacity: 0.4 }]}
           disabled={!questions}
-          onPress={state === 'over' ? again : start}
+          onPress={start}
           accessibilityRole="button"
         >
           {questions ? (
-            <Text style={[styles.primaryText, { color: c.onPrimary }]}>{state === 'over' ? 'Play again' : 'Start'}</Text>
+            <Text style={[styles.primaryText, { color: c.onPrimary }]}>Start</Text>
           ) : (
             <ActivityIndicator color={c.onPrimary} />
           )}

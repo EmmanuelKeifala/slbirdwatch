@@ -5,18 +5,16 @@ import { ActivityIndicator, Animated, Easing, ScrollView, StyleSheet, Text, View
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { chorusQuiz, mediaUrl, type ChorusRound } from '@/api';
-import { useAuth } from '@/state/auth';
 import { close } from '@/lib/nav';
 import { Pressable } from '@/components/Pressable';
 import { GameBar } from '@/components/GameBar';
-import { saveQuiz } from '@/state/quizStore';
+import { GameOver } from '@/components/GameOver';
 import { font, radius, space, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
 
 /** QZ-10 dawn chorus: two or three songs at once; tick every bird you hear. */
 export default function Chorus() {
   const c = useColors();
-  const { session } = useAuth();
   const [rounds, setRounds] = useState<ChorusRound[] | null>(null);
   const [error, setError] = useState(false);
   const [i, setI] = useState(0);
@@ -87,18 +85,14 @@ export default function Chorus() {
   if (!rounds || !round) {
     if (rounds && i >= rounds.length) {
       return (
-        <SafeAreaView style={[styles.center, { backgroundColor: c.bg }]}>
-          <Feather name="sunrise" size={40} color={c.accent} />
-          <Text style={[styles.big, { color: c.ink }]}>
-            {score} / {rounds.length}
-          </Text>
-          <Text style={[styles.body, { color: c.inkMuted }]}>
-            choruses fully named. Picking voices out of a crowd takes practice: keep at it.
-          </Text>
-          <Pressable style={[styles.primary, { backgroundColor: c.primary }]} onPress={close} accessibilityRole="button">
-            <Text style={[styles.primaryText, { color: c.onPrimary }]}>Done</Text>
-          </Pressable>
-        </SafeAreaView>
+        <GameOver
+          icon="sunrise"
+          score={score}
+          outOf={rounds.length}
+          message="choruses fully named. Picking voices out of a crowd takes practice: keep at it."
+          results={() => results.current}
+          kind="sound"
+        />
       );
     }
     return (
@@ -118,7 +112,6 @@ export default function Chorus() {
   };
   const next = () => {
     stop();
-    if (i + 1 >= rounds.length) saveQuiz(results.current, session?.token, 'sound').catch(() => {});
     setI(i + 1);
     setTicked([]);
     setChecked(false);

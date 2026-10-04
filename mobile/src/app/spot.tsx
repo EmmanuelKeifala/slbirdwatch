@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import { mediaUrl, spotGame, type SpotRound } from '@/api';
 import { close } from '@/lib/nav';
 import { Pressable } from '@/components/Pressable';
 import { GameBar } from '@/components/GameBar';
+import { GameOver } from '@/components/GameOver';
 import { font, radius, space, useColors } from '@/theme';
 import { answerFeel } from '@/lib/haptics';
 
@@ -20,6 +21,7 @@ export default function Spot() {
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [score, setScore] = useState(0);
+  const results = useRef<{ speciesId: number; correct: boolean }[]>([]);
   const [game, setGame] = useState(0);
 
   useEffect(() => {
@@ -30,6 +32,7 @@ export default function Spot() {
   }, [game]);
 
   const again = () => {
+    results.current = [];
     setRounds(null);
     setI(0);
     setPicked(null);
@@ -58,20 +61,14 @@ export default function Spot() {
   }
   if (i >= rounds.length) {
     return (
-      <SafeAreaView style={[styles.center, { backgroundColor: c.bg }]}>
-        <Text style={[styles.big, { color: c.ink }]}>
-          {score} / {rounds.length}
-        </Text>
-        <Text style={[styles.body, { color: c.inkMuted, textAlign: 'center' }]}>
-          {score === rounds.length ? 'A sharp eye for detail!' : 'Lookalikes are hard. Each tip you read makes the next one easier.'}
-        </Text>
-        <Pressable style={[styles.primary, { backgroundColor: c.primary }]} onPress={again} accessibilityRole="button">
-          <Text style={[styles.primaryText, { color: c.onPrimary }]}>Play again</Text>
-        </Pressable>
-        <Pressable onPress={close} accessibilityRole="button">
-          <Text style={[styles.link, { color: c.inkMuted }]}>Done</Text>
-        </Pressable>
-      </SafeAreaView>
+      <GameOver
+        icon="columns"
+        score={score}
+        outOf={rounds.length}
+        message={score === rounds.length ? 'A sharp eye for detail!' : 'Lookalikes are hard. Each tip you read makes the next one easier.'}
+        results={() => results.current}
+        onAgain={again}
+      />
     );
   }
 
@@ -83,6 +80,7 @@ export default function Spot() {
     if (answered) return;
     setPicked(id);
     answerFeel(id === r.target.id);
+    results.current.push({ speciesId: r.target.id, correct: id === r.target.id });
     if (id === r.target.id) setScore(score + 1);
   };
 
